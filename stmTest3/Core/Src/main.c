@@ -52,6 +52,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
+float rover_coords[2]; //latitude, longitude
+float antenna_heading_params[4]; // antenna latitude, antenna longitude, rover initial latitude, rover initial longtitude
+float servo_angle[1]; // final angle (theta + 90)
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -101,13 +104,50 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,1500);
+  while (1){
+    double new_latitude_diff = rover_coords[0] - antenna_heading_params[0];
+    double new_longitude_diff = rover_coords[1] - antenna_heading_params[1];
+    double initial_latitude_diff = antenna_heading_params[2] - antenna_heading_params[0];
+    double initial_longitude_diff = antenna_heading_params[3] - antenna_heading_params[1];
+    double new_distance = sqrt(pow(new_latitude_diff, 2) + pow(new_longitude_diff, 2)); // new distance between the antenna and the rover
+    double initial_distance = sqrt(pow(initial_latitude_diff, 2) + pow(initial_longitude_diff, 2)); // initial distance between the antenna and the rover
 
-	  HAL_Delay(1000);
-	  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,2000);
-	  HAL_Delay(1000);
+    // Normalizing the angle
+    double dot_product_initial_new_distance_diff = initial_latitude_diff * new_latitude_diff + initial_longitude_diff * new_longitude_diff;
+    double divider =  new_distance * initial_distance;
+    double theta_deg = 0;
+    double sin_theta = 0;
+    if(divider > 1e-16){
+        double theta_rad = acos(dot_product_initial_new_distance_diff/(divider));
+        theta_deg = theta_rad * 180.0/(acos(0)*2);
+        double cross_product = new_latitude_diff * initial_longitude_diff - initial_latitude_diff * new_longitude_diff;
+        sin_theta = cross_product/ divider;
+    }
+    if(sin_theta<0){
+        servo_angle[0]=(float)(90+theta_deg);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,servo_angle[0]/180*2500);
+    }
+    else{
+        servo_angle[0] = (float)(90 - theta_deg);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,servo_angle[0]/180*2500);
+    }
+
+  
+    // // Adding the offset and setting the servo angle
+    // if (sin_theta < 0){
+    //     servo_angle[0] = (float)(90 + theta_deg);
+    //     servo.write(servo_angle[0]);
+    // }
+    // else{
+    //     servo_angle[0] = (float)(90 - theta_deg);
+    //     servo.write(servo_angle[0]);
+    // }
+	// __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,1500);
+	// HAL_Delay(1000);
+	// __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,2000);
+	// HAL_Delay(1000);
+
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
