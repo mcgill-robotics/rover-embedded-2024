@@ -130,16 +130,17 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
+	rover_coords[0] =0;
+    rover_coords[1] =0 ;
 
 
-
-	antenna_heading_params[0]=30;
-	antenna_heading_params[1]=20;
+	antenna_heading_params[0]=0;
+	antenna_heading_params[1]=0;
 	antenna_heading_params[2]=0;
-	antenna_heading_params[3]=90;
+	antenna_heading_params[3]=500;
 	for (int i = 0; i < 10; i++) {
-	    rover_coords[0] += -100;
-	    rover_coords[1] += 100;
+	    rover_coords[0] = -10000+ rand()% 20001;
+	    rover_coords[1] = rand()% 1001;
 	    double new_latitude_diff = rover_coords[0] - antenna_heading_params[0];
 	        double new_longitude_diff = rover_coords[1] - antenna_heading_params[1];
 	        double initial_latitude_diff = antenna_heading_params[2] - antenna_heading_params[0];
@@ -161,19 +162,21 @@ int main(void)
 	        printf("test\r\n");
 	        if(sin_theta<0){
 	        	servo_angle[0] = (float)(90 + theta_deg);
-
-	        	printf("%d\r\n", (int)(theta_deg * 100));
-	        	printf("%d\r\n", (int)(servo_angle[0] * 100));
+	        	printf("x %d\r\n",(int)rover_coords[0]);
+	        	printf("y %d\r\n",(int)rover_coords[1]);
+	        	printf("theta_deg %d\r\n", (int)(theta_deg * 100));
+	        	printf("actual rover angle %d\r\n", (int)(servo_angle[0] * 100));
 	            printf("%d\r\n",(int)(100*((servo_angle[0]/180*2000)+500)));
 	            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/180*2000)+500);
 	        }
 	        else{
 	        	servo_angle[0] = (float)(90 - theta_deg);
-
-	        	    	printf("%d\r\n", (int)(theta_deg * 100));
-	        	    	printf("%d\r\n", (int)(servo_angle[0] * 100));
-	        	        printf("%d\r\n",(int)(100*((servo_angle[0]/180*2000)+500)));
-	        	        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/180*2000)+500);
+	        	printf("x %d\r\n",(int)rover_coords[0]);
+	        	printf("y %d\r\n",(int)rover_coords[1]);
+	         	printf("theta_deg %d\r\n", (int)(theta_deg * 100));
+	           	printf("actual rover angle %d\r\n", (int)(servo_angle[0] * 100));
+	        	printf("pwm %d\r\n",(int)(100*((servo_angle[0]/180*2000)+500)));
+	        	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/180*2000)+500);
 	        }
 	        HAL_Delay(3000);
 	    printf("moved 10 steps\n");
