@@ -18,7 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+/*THIS CODE HAS SOME OFF SET, IT ONLY GOES FROM 0 TO 220 (NOT 270)*/
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
