@@ -75,8 +75,8 @@ all: main-build
 main-build: stmTest3.elf secondary-outputs
 
 # Tool invocations
-stmTest3.elf stmTest3.map: $(OBJS) $(USER_OBJS) C:\Users\nizar\OneDrive\Bureau\Personal_website.github.io\justsom1_websiter.github.io\rover-embedded-2024\stmTest3\STM32L433RCTXP_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "stmTest3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\nizar\OneDrive\Bureau\Personal_website.github.io\justsom1_websiter.github.io\rover-embedded-2024\stmTest3\STM32L433RCTXP_FLASH.ld" --specs=nosys.specs -Wl,-Map="stmTest3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+stmTest3.elf stmTest3.map: $(OBJS) $(USER_OBJS) C:\Users\Adria\OneDrive\Desktop\PC\Robotics\rover-embedded-2024\stmTest3\STM32L433RCTXP_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "stmTest3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Adria\OneDrive\Desktop\PC\Robotics\rover-embedded-2024\stmTest3\STM32L433RCTXP_FLASH.ld" --specs=nosys.specs -Wl,-Map="stmTest3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -38,6 +38,15 @@
 /* USER CODE BEGIN PD */
 #define SERVO_Motor1   0
 
+#define min_pulse_width 401
+
+//not used but for knowledge purposes
+#define max_pulse_width 2500
+
+#define pulse_width 1850
+
+#define servo_angle_range 220
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -129,6 +138,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int counter = 0;
   while (1){
 	rover_coords[0] =0;
     rover_coords[1] =0 ;
@@ -160,14 +170,15 @@ int main(void)
 	            sin_theta = cross_product/ divider;
 	        }
 	        printf("test\r\n");
+
 	        if(sin_theta<0){
 	        	servo_angle[0] = (float)(90 + theta_deg);
 	        	printf("x %d\r\n",(int)rover_coords[0]);
 	        	printf("y %d\r\n",(int)rover_coords[1]);
 	        	printf("theta_deg %d\r\n", (int)(theta_deg * 100));
 	        	printf("actual rover angle %d\r\n", (int)(servo_angle[0] * 100));
-	            printf("%d\r\n",(int)(100*((servo_angle[0]/180*2000)+500)));
-	            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/180*2000)+500);
+	            printf("%d\r\n",(int)(100*((servo_angle[0]/servo_angle_range*pulse_width)+min_pulse_width)));
+	            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/servo_angle_range*pulse_width)+min_pulse_width);
 	        }
 	        else{
 	        	servo_angle[0] = (float)(90 - theta_deg);
@@ -175,10 +186,11 @@ int main(void)
 	        	printf("y %d\r\n",(int)rover_coords[1]);
 	         	printf("theta_deg %d\r\n", (int)(theta_deg * 100));
 	           	printf("actual rover angle %d\r\n", (int)(servo_angle[0] * 100));
-	        	printf("pwm %d\r\n",(int)(100*((servo_angle[0]/180*2000)+500)));
-	        	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/180*2000)+500);
+	        	printf("pwm %d\r\n",(int)(100*((servo_angle[0]/servo_angle_range*pulse_width)+min_pulse_width)));
+	        	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1,(servo_angle[0]/servo_angle_range*pulse_width)+min_pulse_width);
+
 	        }
-	        HAL_Delay(3000);
+	        HAL_Delay(6000);
 	    printf("moved 10 steps\n");
 	}
 
