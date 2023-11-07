@@ -228,8 +228,10 @@ double computeWristTorque(ArmPose &armPose, double heldMass)
     Vector2d wristJointToCM(0,0);
     wristJointToCM+=centerMass;
     wristJointToCM-=wristPosition;
-
-    double torque = -GRAVITY*totalMass/ wristJointToCM.getLength() * wristJointToCM.getOrientation().getCos();
+    
+    //pendulum torque equation: torque = -mg/L sin(theta), theta is measured from the y-axis
+    // used cos, since angle is measured from the x-axis, so it would be sin(90deg-theta) = cos(theta)
+    double torque = -GRAVITY*totalMass/ wristJointToCM.getLength() * wristJointToCM.getOrientation().getCos();  
     return torque;
 }
 
@@ -267,6 +269,8 @@ double computeElbowTorque(ArmPose &armPose, double heldMass)
     elbowJointToCM+=centerMass;
     elbowJointToCM-=elbowPosition;
 
+    //pendulum torque equation: torque = -mg/L sin(theta), theta is measured from the y-axis
+    // used cos, since angle is measured from the x-axis, so it would be sin(90deg-theta) = cos(theta)
     double torque = -GRAVITY*totalMass/ elbowJointToCM.getLength() * elbowJointToCM.getOrientation().getCos();
     return torque;
 }
@@ -307,6 +311,8 @@ double computeShoulderTorque(ArmPose &armPose, double heldMass)
     shoulderJointToCM+=centerMass;
     shoulderJointToCM-=shoulderPosition;
 
+    //pendulum torque equation: torque = -mg/L sin(theta), theta is measured from the y-axis
+    // used cos, since angle is measured from the x-axis, so it would be sin(90deg-theta) = cos(theta)
     double torque = -GRAVITY*totalMass/ shoulderJointToCM.getLength() * shoulderJointToCM.getOrientation().getCos();
     return torque;
 }
