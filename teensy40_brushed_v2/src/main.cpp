@@ -12,9 +12,11 @@ model_encoder enc1;
 model_sensor cur1;
 driver_motor mot1;
 // Define your pins numbers here
-const int OUTA_Pin = 3;  // Example pin numbers, change as per your hardware
+const int OUTA_Pin = 3; // Example pin numbers, change as per your hardware
 const int OUTB_Pin = 4;
-int counter = 0;  // Ensure counter is initialized
+int counter = 0; // Ensure counter is initialized
+
+Rotation2d *current_rotation;
 
 void setup()
 {
@@ -23,7 +25,6 @@ void setup()
     cur1.initialize_sensor(CURRENT_SENSE_A);
     SerialUSB.println("Done Setup");
 
-
     // pinMode(OUTA_Pin, INPUT);
     // pinMode(OUTB_Pin, INPUT);
     pinMode(NSLEEP1, OUTPUT);
@@ -31,6 +32,9 @@ void setup()
     pinMode(PWM1, OUTPUT);
     digitalWrite(NSLEEP1, HIGH);
     digitalWrite(DIR1, HIGH);
+
+    // Initialize Motor
+    current_rotation = Rotation2d::getRotationFromDeg(0);
 }
 
 void loop()
@@ -39,13 +43,24 @@ void loop()
 
     // SerialUSB.print("Current: ");
     // SerialUSB.print(cur1.getCurrent());
-    SerialUSB.print(" Position: ");
-    SerialUSB.println(enc1.getAngle());
-    delay(10);
-    analogWrite(PWM1, 200);
-    delay(1000);
-    analogWrite(PWM1, 50);
-    delay(1000);
+    // SerialUSB.print(" Position: ");
+    // SerialUSB.println(enc1.getAngle());
+
+    // Test gravity compensation
+    // double current_angle = enc1.getAngle();
+    double current_angle = 50;
+    double output;
+    current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
+    printf("current cos: %f\r\n", current_rotation->getCos());
+    printf("current output: %f\r\n", output);
+    maintainStateProto(*current_rotation, &output);
+    // printf("Current voltage: %f\n", output);
+
+    // delay(10);
+    // analogWrite(PWM1, 200);
+    // delay(1000);
+    // analogWrite(PWM1, 50);
+    // delay(1000);
 
     // DUMB VERSION
     // if (digitalRead(OUTA_Pin) == LOW) // If OUTA is LOW

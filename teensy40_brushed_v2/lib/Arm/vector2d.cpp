@@ -32,7 +32,7 @@ void Vector2d::updateVectorfromCartesian(double x, double y)
 void Vector2d::updateVectorfromPolar(double l, Rotation2d orientation)
 {
     _length = l;
-    _orientation.setAngleRad(orientation.getRotation());
+    _orientation.setAngleRad(orientation.getRad());
     _x = _length * _orientation.getCos();
     _y = _length * _orientation.getSin();
 }
