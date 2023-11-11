@@ -122,10 +122,11 @@ struct JointProperties
 
 };
 
+#define GRAVITY 9.81
 
 MotorModel shoulder_motor (111,5.28,24,3210,0.696,120);
 MotorModel elbow_motor (81.9,2.49,24,4300,0.497,1); // todo: find ratio
-MotorModel wrist_motor (24.5,90.0/100.0,24,13,0.7,1); // todo: find ratio
+MotorModel wrist_motor (24.5,GRAVITY*90.0/100.0,24,13,0.7,1); // todo: find ratio
 
 // Distance of links in m, CM...
 JointProperties shoulderProperties(1,1,1,1);
@@ -133,7 +134,6 @@ JointProperties elbowProperties(1,1,1,1);
 JointProperties wristProperties(1,1,1,1);
 
 #define ESTIMATED_HELDMASS_OFFSET 0.75
-#define GRAVITY 9.81
 /**
  * Calculates the position of the end of the shoulder joint.
  * In the x,y plane of the robot
@@ -348,4 +348,21 @@ void maintainState(ArmPose& pose, double heldMass)
     double wristMotorVoltage = findVoltage(wristMotorState, wrist_motor);
     double elbowMotorVoltage = findVoltage(elbowMotorState, elbow_motor);
     double shoulderMotorVoltage = findVoltage(shoulderMotorState, shoulder_motor);
+}
+
+JointProperties proto(.2, .07, 0, .1);
+
+
+double calculateTorque (Rotation2d pos)
+{
+    Vector2d cm_pos(0,0);
+    Vector2d::rotateBy(cm_pos, pos + proto.cm_pos.getOrientation());
+    return -GRAVITY*proto.mass/cm_pos.getLength()*cm_pos.getOrientation().getCos();
+}
+
+void maintainStateProto(Rotation2d& pos)
+{
+    double torque = calculateTorque(pos);
+    MotorState motorState(0, torque);
+    double voltage = findVoltage(motorState, wrist_motor);
 }
