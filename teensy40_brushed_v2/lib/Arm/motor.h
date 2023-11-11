@@ -25,9 +25,9 @@ struct MotorModel
     MotorModel (double a_stallCurrent, double a_stallTorque, double a_maxVoltage, double a_maxRPM, double ratio)
     {
         stallCurrent = a_stallCurrent;
-        stallTorque = a_stallTorque*ratio;
+        stallTorque = a_stallTorque/ratio;
         maxVoltage = a_maxVoltage;
-        maxRPM = a_maxRPM/ratio;
+        maxRPM = a_maxRPM*ratio;
         gearRatio = ratio;
         resistance = a_maxVoltage/a_stallCurrent; //based on ohm's law: in Ohms
         Kt = stallTorque/stallCurrent; // Torque constant: Nm/A
