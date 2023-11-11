@@ -355,14 +355,14 @@ double calculateTorque(const Rotation2d pos)
     cm_pos += proto.cm_pos;
     Vector2d::rotateBy(cm_pos, pos);
     printf("cm_pos cos: %f\r\n", cm_pos.getOrientation().getCos());
-    return -GRAVITY * proto.mass / cm_pos.getLength() * cm_pos.getOrientation().getCos();
+    return -GRAVITY * proto.mass * cm_pos.getLength() * cm_pos.getOrientation().getCos();
 }
 
 void maintainStateProto(Rotation2d pos, double* output)
 {
     double torque = calculateTorque(pos);
+    printf("torque: %f\r\n", torque);
     MotorState motorState(0, torque);
     double voltage = findVoltage(motorState, wrist_motor);
     *output = voltage;
-    SerialUSB.println(torque);
 }
