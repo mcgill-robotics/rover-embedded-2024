@@ -51,10 +51,9 @@ void loop()
     double current_angle = 50;
     double output;
     current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
-    printf("current cos: %f\r\n", current_rotation->getCos());
-    printf("current output: %f\r\n", output);
     maintainStateProto(*current_rotation, &output);
-    // printf("Current voltage: %f\n", output);
+    printf("current output: %f\r\n", output);
+    // printf("Current voltage: %f\n", output); 
 
     // delay(10);
     // analogWrite(PWM1, 200);
