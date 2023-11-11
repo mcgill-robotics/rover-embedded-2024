@@ -354,7 +354,7 @@ double calculateTorque(const Rotation2d pos)
     Vector2d cm_pos(0, 0);
     cm_pos += proto.cm_pos;
     Vector2d::rotateBy(cm_pos, pos);
-    return -GRAVITY * proto.mass * cm_pos.getLength() * cm_pos.getOrientation().getCos();
+    return -GRAVITY * proto.mass * cm_pos.getLength() * cm_pos.getOrientation().getSin(); // or getCos()?
 }
 
 void maintainStateProto(Rotation2d pos, double* output)
