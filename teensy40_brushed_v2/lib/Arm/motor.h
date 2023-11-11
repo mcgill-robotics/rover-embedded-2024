@@ -1,3 +1,4 @@
+#pragma once
 #include "rotation2d.h"
 #include "vector2d.h"
 /**
@@ -125,9 +126,11 @@ MotorModel shoulder_motor (111,5.28,24,3210,120);
 MotorModel elbow_motor (81.9,2.49,24,4300,1); // todo: find ratio
 MotorModel wrist_motor (24.5,90.0/100.0,24,13,1); // todo: find ratio
 
+// Distance of links in m, CM...
 JointProperties shoulderProperties(1,1,1,1);
 JointProperties elbowProperties(1,1,1,1);
 JointProperties wristProperties(1,1,1,1);
+
 #define ESTIMATED_HELDMASS_OFFSET 0.75
 #define GRAVITY 9.81
 /**
@@ -185,17 +188,17 @@ void calculateCenterMassofHeldMass (Vector2d *buf, ArmPose& armPose, double held
 /**
  * Calculates the center of mass * mass of the joint. 
  * In the x,y plane of the robot.
- * @param buf The vector to store the position of the center of mass * mass of the joint.
- * @param armPose The pose of the arm.
+ * @param buf OUT The vector to store the position of the center of mass * mass of the joint.
+ * @param jointPose The pose of the joint.
  * @param properties The properties of the joint.
 */
-void computeJointCM(Vector2d *buf, ArmPose &armPose, JointProperties& properties)
+void computeJointCM(Vector2d *buf, Rotation2d &jointPose, JointProperties& properties)
 {
     //function assumes that buf is already filled with the value of the joint position in x,y
     //(joint position is not hte same as joint cm)
     Vector2d orientedJoint(0,0);
     orientedJoint+=properties.cm_pos; // copy cm position vector
-    Vector2d::rotateBy(orientedJoint, armPose.wrist); // orient cm position vector properly
+    Vector2d::rotateBy(orientedJoint, jointPose); // orient cm position vector properly
     *buf+=orientedJoint;
     *buf*=properties.mass; // cm * mass of the joint
 }
@@ -209,12 +212,14 @@ void computeJointCM(Vector2d *buf, ArmPose &armPose, JointProperties& properties
 */
 double computeWristTorque(ArmPose &armPose, double heldMass)
 {
+    // Origin to CM of held mass
     Vector2d heldMassPos(0,0); //
     calculateCenterMassofHeldMass(&heldMassPos, armPose, heldMass);
 
+    // Origin to CM of wrist
     Vector2d wristMass (0,0);
     getElbowEndPosition(&wristMass, armPose);
-    computeJointCM(&wristMass, armPose, wristProperties);
+    computeJointCM(&wristMass, armPose.wrist, wristProperties);
 
     double totalMass = wristProperties.mass + heldMass;
     Vector2d centerMass (0,0);
@@ -225,6 +230,7 @@ double computeWristTorque(ArmPose &armPose, double heldMass)
     Vector2d wristPosition(0,0);
     getElbowEndPosition(&wristPosition, armPose);
 
+    // Wrist joint to new CM of wrist with held mass
     Vector2d wristJointToCM(0,0);
     wristJointToCM+=centerMass;
     wristJointToCM-=wristPosition;
@@ -249,11 +255,11 @@ double computeElbowTorque(ArmPose &armPose, double heldMass)
 
     Vector2d wristMass (0,0);
     getElbowEndPosition(&wristMass, armPose);
-    computeJointCM(&wristMass, armPose, wristProperties);
+    computeJointCM(&wristMass, armPose.wrist, wristProperties);
 
     Vector2d elbowMass (0,0);
-    getShoulderEndPosition(&wristMass, armPose);
-    computeJointCM(&elbowMass, armPose, elbowProperties);
+    getShoulderEndPosition(&elbowMass, armPose);
+    computeJointCM(&elbowMass, armPose.elbow, elbowProperties);
 
     double totalMass = elbowProperties.mass + wristProperties.mass + heldMass;
     Vector2d centerMass (0,0);
@@ -288,14 +294,14 @@ double computeShoulderTorque(ArmPose &armPose, double heldMass)
 
     Vector2d wristMass (0,0);
     getElbowEndPosition(&wristMass, armPose);
-    computeJointCM(&wristMass, armPose, wristProperties);
+    computeJointCM(&wristMass, armPose.wrist, wristProperties);
 
     Vector2d elbowMass (0,0);
     getShoulderEndPosition(&wristMass, armPose);
-    computeJointCM(&elbowMass, armPose, elbowProperties);
+    computeJointCM(&elbowMass, armPose.elbow, elbowProperties);
 
     Vector2d shoulderMass (0,0);
-    computeJointCM(&shoulderMass, armPose, shoulderProperties);
+    computeJointCM(&shoulderMass, armPose.shoulder, shoulderProperties);
 
 
     double totalMass = shoulderProperties.mass + elbowProperties.mass + wristProperties.mass + heldMass;
@@ -324,7 +330,7 @@ double computeShoulderTorque(ArmPose &armPose, double heldMass)
 */
 double findVoltage(MotorState& requiredState,  MotorModel& model)
 {
-    return requiredState.torque*model.Kt/model.resistance + requiredState.vel*model.Kv;
+    return requiredState.torque/model.Kt*model.resistance + requiredState.vel*model.Kv;
 }
 
 /**

@@ -1,6 +1,6 @@
+#pragma once
 #include <cmath>
 #define PI 3.14159
-
 /**
  * A simple class that represents a 2d Rotation regardless of unit.
  * @author David Ly
