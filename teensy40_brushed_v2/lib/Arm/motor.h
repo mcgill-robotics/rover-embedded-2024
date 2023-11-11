@@ -13,7 +13,7 @@
 struct MotorModel 
 {
     public :
-    double stallCurrent, stallTorque,  maxVoltage, maxRPM, resistance, Kt, Kv, gearRatio;
+    double stallCurrent, stallTorque,  maxVoltage, maxRPM, resistance, Kt, Kv, gearRatio, freeCurrent;
     /**
      * Creates a new MotorModel with given parameters.
      * @param a_stallCurrent The stall current of the motor in Amps.
@@ -22,16 +22,17 @@ struct MotorModel
      * @param a_maxRPM The max RPM of the motor in RPM.
      * @param ratio The gear ratio of the motor.
     */
-    MotorModel (double a_stallCurrent, double a_stallTorque, double a_maxVoltage, double a_maxRPM, double ratio)
+    MotorModel (double a_stallCurrent, double a_stallTorque, double a_maxVoltage, double a_maxRPM,double a_freeCurrent, double ratio)
     {
         stallCurrent = a_stallCurrent;
         stallTorque = a_stallTorque/ratio;
         maxVoltage = a_maxVoltage;
         maxRPM = a_maxRPM*ratio;
+        freeCurrent = a_freeCurrent;
         gearRatio = ratio;
         resistance = a_maxVoltage/a_stallCurrent; //based on ohm's law: in Ohms
         Kt = stallTorque/stallCurrent; // Torque constant: Nm/A
-        Kv = maxRPM/maxVoltage; // Velocity constant: RPM/V
+        Kv = maxRPM/(maxVoltage-freeCurrent*resistance); // Velocity constant: RPM/V
     }
     /**
      * @return Velocity Constant in RPS/V
@@ -122,9 +123,9 @@ struct JointProperties
 };
 
 
-MotorModel shoulder_motor (111,5.28,24,3210,120);
-MotorModel elbow_motor (81.9,2.49,24,4300,1); // todo: find ratio
-MotorModel wrist_motor (24.5,90.0/100.0,24,13,1); // todo: find ratio
+MotorModel shoulder_motor (111,5.28,24,3210,0.696,120);
+MotorModel elbow_motor (81.9,2.49,24,4300,0.497,1); // todo: find ratio
+MotorModel wrist_motor (24.5,90.0/100.0,24,13,0.7,1); // todo: find ratio
 
 // Distance of links in m, CM...
 JointProperties shoulderProperties(1,1,1,1);
