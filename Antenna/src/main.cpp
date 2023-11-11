@@ -3,6 +3,8 @@
 #include <math.h>
 #include <Arduino.h>
 #include "Servo.h"
+#include <iostream>
+using namespace std;
 
 #define ANTENNA_PWM_PIN 1
 
@@ -16,16 +18,24 @@ void antenna_loop();
 float rover_coords[2]; //latitude, longitude
 float antenna_heading_params[4]; // antenna latitude, antenna longitude, rover initial latitude, rover initial longtitude
 float servo_angle[1]; // final angle (theta + 90)
+String gpsCoords;
 
 Servo servo;
 
-void antenna_setup(){
+void setup(){
+    Serial.begin(9600);
     servo.attach(ANTENNA_PWM_PIN);
     delay(3000);
+    antenna_heading_params[0]=0;
+    antenna_heading_params[1]=0;
+    antenna_heading_params[2]=0;
+    antenna_heading_params[3]=1;
 }
 
-void antenna_loop(){
+void loop(){
   // Calculating the differences
+  rover_coords[0]=0;
+  rover_coords[1]=0;
   double new_latitude_diff = rover_coords[0] - antenna_heading_params[0];
   double new_longitude_diff = rover_coords[1] - antenna_heading_params[1];
   double initial_latitude_diff = antenna_heading_params[2] - antenna_heading_params[0];
@@ -56,6 +66,8 @@ void antenna_loop(){
     servo_angle[0] = (float)(90 - theta_deg);
     servo.write(servo_angle[0]);
   }
+  Serial.print(servo_angle[0]);
+  delay(5000);
 }
 
 //#endif
