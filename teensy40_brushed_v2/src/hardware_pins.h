@@ -13,8 +13,10 @@
 
 #include <stdint.h>
 
-const uint8_t ENCPIN1_1 = 3;
-const uint8_t ENCPIN1_2 = 4;
+// const uint8_t ENCPIN1_1 = 3;
+// const uint8_t ENCPIN1_2 = 4;
+const uint8_t ENCPIN1_1 = 0;
+const uint8_t ENCPIN1_2 = 1;
 
 const uint8_t ENCPIN2_1 = 7;
 const uint8_t ENCPIN2_2 = 8;
