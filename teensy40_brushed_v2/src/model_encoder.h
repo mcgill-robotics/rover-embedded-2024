@@ -7,7 +7,7 @@
  *
  * @attention     For prototype example only
  *				  V1.1.0 - added offset calculations for current and inkwell sensors
- *					
+ *
  */
 
 #ifndef MODEL_ENCODER_H
@@ -17,9 +17,10 @@
 #include "velocity_estimation.h"
 #include "QuadEncoder.h"
 
-class model_encoder {
+class model_encoder
+{
 public:
-	void initialize_encoder(uint8_t rotationalDirection, float offset, float resolution, uint8_t port);
+    void initialize_encoder(uint8_t rotationalDirection, float offset, float resolution, uint8_t port);
 
     void reset_encoder(void);
 
@@ -32,25 +33,25 @@ public:
     void set_parameters(uint8_t direction, float offset, float resolution);
 
     /**
-	 * Main logic loop for calculating detected encoder velocity
-	 *
-	 * @param currentTime current micros count 
-	 */
-	void velocityEstimation(void);
+     * Main logic loop for calculating detected encoder velocity
+     *
+     * @param currentTime current micros count
+     */
+    void velocityEstimation(void);
 
     float getVelocity(void);
 
 private:
-    QuadEncoder* _encoder;
+    QuadEncoder *_encoder;
     int32_t _offset;
-	int32_t _resolution;
-	uint8_t _port;
-	int32_t _position;
+    int32_t _resolution;
+    uint8_t _port;
+    int32_t _position;
     uint8_t _pinA;
     uint8_t _pinB;
 
     float _angle;
-	float _angularVelocity;
+    float _angularVelocity;
     velocity_estimation _velocityEstimation;
 };
 

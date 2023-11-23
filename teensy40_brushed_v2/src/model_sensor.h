@@ -7,7 +7,7 @@
  *
  * @attention     For prototype example only
  *				  V1.1.0 - added offset calculations for current and inkwell sensors
- *					
+ *
  */
 
 #ifndef MODEL_SENSOR_H
@@ -17,7 +17,8 @@
 #include <ADC.h>
 #include "hardware_pins.h"
 
-class model_sensor {
+class model_sensor
+{
 public:
 	void initialize_sensor(uint8_t pin);
 
@@ -39,10 +40,9 @@ private:
 
 	int32_t _sensorOffset;
 
-    void _initialize_adc(void);
+	void _initialize_adc(void);
 
-    void _update_sensor_value(void);
-
+	void _update_sensor_value(void);
 };
 
 #endif

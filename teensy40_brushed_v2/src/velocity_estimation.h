@@ -1,18 +1,19 @@
 #include <stdint.h>
 #include "Arduino.h"
 
-class velocity_estimation {
+class velocity_estimation
+{
 public:
-
 	void initialize_parameters(float ppr, float error, float timeScale, uint8_t skip, uint32_t delay);
 
 	void update_readings(int32_t position, uint32_t timeStamp);
 
-	int32_t get_last_position(void); // may be depreciated 
+	int32_t get_last_position(void); // may be depreciated
 
-	//float htt(uint32_t currentTime);
+	// float htt(uint32_t currentTime);
 
-	typedef struct {
+	typedef struct
+	{
 		int32_t _positions[64];
 		uint32_t _timeStamps[64];
 		float _vel[64];
@@ -26,9 +27,7 @@ public:
 
 	float foaw(int best);
 
-
 private:
-	
 	const uint8_t FILTER_SIZE = 16;
 
 	const float _pi = 3.141592654;
@@ -60,5 +59,4 @@ private:
 	uint32_t _timeStamps[16];
 
 	void _compare_swap(int a, int b);
-
 };

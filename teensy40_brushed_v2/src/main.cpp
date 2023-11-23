@@ -54,7 +54,7 @@ void loop()
     current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
     maintainStateProto(*current_rotation, &output);
     printf("current output: %f\r\n", output);
-    printf("Current voltage: %f\n", output); 
+    printf("Current voltage: %f\n", output);
     if (output < 0)
     {
         digitalWrite(DIR1, HIGH);
@@ -63,10 +63,10 @@ void loop()
     {
         digitalWrite(DIR1, LOW);
     }
-    int analog_write_output = (output/24)*255;
+    int analog_write_output = (output / 24) * 255;
     printf("Current analog output: %d\n", analog_write_output);
     analogWrite(PWM1, analog_write_output);
- 
+
     // delay(10);
     // analogWrite(PWM1, 200);
     // delay(1000);
