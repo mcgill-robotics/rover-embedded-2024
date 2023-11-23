@@ -14,21 +14,20 @@
 #include "Arduino.h"
 #include "hardware_pins.h"
 
-
 #define _MAX_PWM_FREQUENCY 146484.38
 #define _PWM_BIT_RESOLUTION 10
 #define _PWM_OUTPUT_RESOLUTION 1023
 
-class driver_motor {
+class driver_motor
+{
 public:
-
 	/**
-     * Initialize a actuator control pins based on port and control parameters
-     *
-     * @param		direction positive actuator rotation direction
-     * @param		port actuator connection port
-     * @param		maxTorque maximum torque limit actuator can output
-     */
+	 * Initialize a actuator control pins based on port and control parameters
+	 *
+	 * @param		direction positive actuator rotation direction
+	 * @param		port actuator connection port
+	 * @param		maxTorque maximum torque limit actuator can output
+	 */
 	void initialize_motor(uint8_t directionMotor, uint8_t motorPWMPin, uint8_t motorDirPin, uint8_t motorFaultPin, float maxTorqueMotor, float torqueConstantMotor);
 
 	/**
@@ -47,7 +46,7 @@ public:
 	void setDirection(uint8_t direction);
 
 	/// @brief Sets the control period of the motor PID loop
-	/// @param period 
+	/// @param period
 	void set_control_period(float period);
 
 	float getSetTorque(void);
@@ -69,7 +68,7 @@ public:
 
 	void speed_control(float motorSpeed);
 
-		/**
+	/**
 	 * Set hardware PWM duty cycle
 	 *
 	 * @param		pwmPin hardware PWM pin to output signal
@@ -92,7 +91,7 @@ private:
 	float _targetPosition;
 	float _targetSpeed;
 
-	//PID parameters
+	// PID parameters
 	float _outputMotor;
 	float _ctrlPeriod;
 	float _samplingPeriod;
@@ -104,38 +103,34 @@ private:
 	const float _KI = 2.0;
 	const float _KD = 1.0;
 
-	//Filter params
-	// kalman filter parameters
-	
+	// Filter params
+	//  kalman filter parameters
+
 	const float _ERR_ESTIMATE_INIT = 1.877e-3;
 	const float _LAST_ESTIMATE_INIT = 0;
 	const float _ERR_MEASURE_INIT = 1.877e-3;
 	const float _Q_INIT = 0.0044;
-	
 
 	float _errEstimate;
 	float _lastEstimate;
 	float _errMeasure;
 	float _q;
 
-
 	float _kalmanGain;
 	float _currentEstimate;
 
 	// Error parameters and variables
-	const float _maxError = 2.0; // 10000.0; //2.0; 
-	
+	const float _maxError = 2.0; // 10000.0; //2.0;
+
 	float _error;
 	float _previousError;
 
 	float _errorInt;
 	float _errorDir;
 
-
 	// const float _MAX_PWM_FREQUENCY = 146484.38;
 	// const uint8_t _PWM_BIT_RESOLUTION = 10;
 	// const uint32_t _PWM_OUTPUT_RESOLUTION = 1023;
-
 
 	/**
 	 * Set PWM signal bit resolution
@@ -143,8 +138,7 @@ private:
 	 * @param		resolution new PWM bit resolution
 	 */
 	void _pwm_set_resolution(uint16_t resolution);
-	
-	
+
 	/**
 	 * Hardware PWM pin setup function
 	 *
@@ -152,7 +146,6 @@ private:
 	 * @param		pwmFreq desired hardware PWM frequency
 	 */
 	void _pwm_setup(uint8_t pwmPin, float pwmFreq);
-	
 };
 
 #endif
