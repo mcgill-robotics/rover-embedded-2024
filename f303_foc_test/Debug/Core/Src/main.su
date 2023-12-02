@@ -1,6 +1,5 @@
-../Core/Src/main.c:83:6:commutate_phase	32	static
-../Core/Src/main.c:107:5:main	64	static
-../Core/Src/main.c:214:6:SystemClock_Config	128	static
-../Core/Src/main.c:257:13:MX_TIM1_Init	96	static
-../Core/Src/main.c:326:13:MX_GPIO_Init	40	static
-../Core/Src/main.c:369:6:Error_Handler	4	static,ignoring_inline_asm
+../Core/Src/main.c:81:6:commutate_phase	32	static
+../Core/Src/main.c:105:5:main	80	static
+../Core/Src/main.c:211:6:SystemClock_Config	72	static
+../Core/Src/main.c:248:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:294:6:Error_Handler	4	static,ignoring_inline_asm

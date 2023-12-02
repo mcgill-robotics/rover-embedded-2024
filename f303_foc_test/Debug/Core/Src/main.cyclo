@@ -1,6 +1,5 @@
-../Core/Src/main.c:83:6:commutate_phase	5
-../Core/Src/main.c:107:5:main	1
-../Core/Src/main.c:214:6:SystemClock_Config	4
-../Core/Src/main.c:257:13:MX_TIM1_Init	5
-../Core/Src/main.c:326:13:MX_GPIO_Init	1
-../Core/Src/main.c:369:6:Error_Handler	1
+../Core/Src/main.c:81:6:commutate_phase	5
+../Core/Src/main.c:105:5:main	2
+../Core/Src/main.c:211:6:SystemClock_Config	3
+../Core/Src/main.c:248:13:MX_GPIO_Init	1
+../Core/Src/main.c:294:6:Error_Handler	1
