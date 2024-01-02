@@ -14,6 +14,9 @@
 #include "Arduino.h"
 #include "hardware_pins.h"
 
+#include "model_encoder.h"
+#include "model_sensor.h"
+
 #define _MAX_PWM_FREQUENCY 146484.38
 #define _PWM_BIT_RESOLUTION 10
 #define _PWM_OUTPUT_RESOLUTION 1023
@@ -77,6 +80,8 @@ public:
 	void _pwm_write_duty(uint8_t pwmPin, uint32_t pwmDuty);
 
 private:
+	model_encoder *_encoder = nullptr;
+
 	uint8_t _motorPwmPin;
 	uint8_t _motorDirPin;
 	uint8_t _motorFaultPin;
@@ -146,6 +151,8 @@ private:
 	 * @param		pwmFreq desired hardware PWM frequency
 	 */
 	void _pwm_setup(uint8_t pwmPin, float pwmFreq);
+
+	void driver_motor::closed_loop_control_tick();
 };
 
 #endif

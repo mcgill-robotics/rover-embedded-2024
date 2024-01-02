@@ -77,6 +77,11 @@ void driver_motor::set_control_period(float period)
 	_samplingPeriod = _ctrlPeriod * 1e-6;
 }
 
+void driver_motor::closed_loop_control_tick()
+{
+	
+}
+
 void driver_motor::torque_control(float motorCur)
 {
 
