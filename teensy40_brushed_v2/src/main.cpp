@@ -39,6 +39,7 @@ void setup()
 
 void loop()
 {
+    // Poll encoder
     enc1.read_encoder_angle();
 
     // INFO
@@ -66,6 +67,9 @@ void loop()
     int analog_write_output = (output / 24) * 255;
     printf("Current analog output: %d\n", analog_write_output);
     analogWrite(PWM1, analog_write_output);
+
+    // DUMB TEST MOTOR
+    
 
     // delay(10);
     // analogWrite(PWM1, 200);
