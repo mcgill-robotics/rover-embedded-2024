@@ -13,38 +13,33 @@
 
 #include <stdint.h>
 
-// const uint8_t ENCPIN1_1 = 3;
-// const uint8_t ENCPIN1_2 = 4;
 const uint8_t ENCPIN1_1 = 0;
 const uint8_t ENCPIN1_2 = 1;
 
-const uint8_t ENCPIN2_1 = 7;
-const uint8_t ENCPIN2_2 = 8;
+const uint8_t ENCPIN2_1 = 2;
+const uint8_t ENCPIN2_2 = 3;
 
-const uint8_t ENCPIN3_1 = 31;
-const uint8_t ENCPIN3_2 = 30;
+const uint8_t ENCPIN3_1 = 4;
+const uint8_t ENCPIN3_2 = 5;
 
+const uint8_t PWMPIN1 = 13; // enable pin
+const uint8_t DIRPIN1 = 16; // phase pin
+const uint8_t nSLEEP1 = -1;
 
-const uint8_t PWMPIN1 = 0;  // enable pin
-const uint8_t DIRPIN1 = 2; // phase pin
-const uint8_t nSLEEP1 = 1;
+const uint8_t PWMPIN2 = 14;
+const uint8_t DIRPIN2 = 17;
+const uint8_t nSLEEP2 = -1;
 
-const uint8_t PWMPIN2 = 10;
-const uint8_t DIRPIN2 = 12;
-const uint8_t nSLEEP2 = 11;
+const uint8_t PWMPIN3 = 15;
+const uint8_t DIRPIN3 = 18;
+const uint8_t nSLEEP3 = -1;
 
-const uint8_t PWMPIN3 = 28;
-const uint8_t DIRPIN3 = 32;
-const uint8_t nSLEEP3 = 29;
+const uint8_t LED_O = -1;
+const uint8_t LED_B = -1;
 
+const uint8_t CURRENT_SENSE_A = 19;
 
-const uint8_t LED_O = 34;
-const uint8_t LED_B = 33;
+const uint8_t CURRENT_SENSE_B = 20;
 
-
-const uint8_t CURRENT_SENSE_A = 23;
-
-const uint8_t CURRENT_SENSE_B = 24;
-
-const uint8_t CURRENT_SENSE_C = 25;
+const uint8_t CURRENT_SENSE_C = 21;
 #endif
