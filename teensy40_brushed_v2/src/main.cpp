@@ -4,72 +4,72 @@
 #include "model_encoder.h"
 #include "model_sensor.h"
 #include "motor.h"
-#define NSLEEP1 9
-#define DIR1 16
-#define PWM1 13
 
 model_encoder enc1;
 model_sensor cur1;
 driver_motor mot1;
-// Define your pins numbers here
-const int OUTA_Pin = 3; // Example pin numbers, change as per your hardware
-const int OUTB_Pin = 4;
+
 int counter = 0; // Ensure counter is initialized
 
 Rotation2d *current_rotation;
 
 void setup()
 {
-    // SerialUSB.begin(115200);
+    SerialUSB.begin(115200);
+
+    // Encoder port 1
     enc1.initialize_encoder(0, 0, 43000, 1);
     cur1.initialize_sensor(CURRENT_SENSE_A);
     SerialUSB.println("Done Setup");
 
-    // pinMode(OUTA_Pin, INPUT);
-    // pinMode(OUTB_Pin, INPUT);
-    pinMode(NSLEEP1, OUTPUT);
-    pinMode(DIR1, OUTPUT);
-    pinMode(PWM1, OUTPUT);
-    digitalWrite(NSLEEP1, HIGH);
-    digitalWrite(DIR1, HIGH);
+    // Initialize Pins
+    pinMode(PWMPIN1, OUTPUT);
+    pinMode(DIRPIN1, OUTPUT);
+    pinMode(nSLEEP1, OUTPUT);
 
     // Initialize Motor
+    digitalWrite(nSLEEP1, HIGH);
+    digitalWrite(DIRPIN1, HIGH);
     current_rotation = Rotation2d::getRotationFromDeg(0);
 }
 
 void loop()
 {
-    // Poll encoder
-    enc1.read_encoder_angle();
+    // DUMB TEST MOTOR
+    analogWrite(PWMPIN1, 50);
+    delay(1000);
+    analogWrite(PWMPIN1, 125);
+    delay(1000);
 
-    // INFO
+    // // POLL ENCODER
+    // enc1.read_encoder_angle();
+
+    // // TEST CURRENT SENSOR
     // SerialUSB.print("Current: ");
     // SerialUSB.print(cur1.getCurrent());
-    SerialUSB.print(" Position: ");
-    double current_angle = (enc1.getAngle() - 90);
-    SerialUSB.println(current_angle);
-    // analogWrite(PWM1, 50);
 
-    // Test gravity compensation
-    double output;
-    current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
-    maintainStateProto(*current_rotation, &output);
-    printf("current output: %f\r\n", output);
-    printf("Current voltage: %f\n", output);
-    if (output < 0)
-    {
-        digitalWrite(DIR1, HIGH);
-    }
-    else
-    {
-        digitalWrite(DIR1, LOW);
-    }
-    int analog_write_output = (output / 24) * 255;
-    printf("Current analog output: %d\n", analog_write_output);
-    analogWrite(PWM1, analog_write_output);
+    // // TEST ENCODER
+    // SerialUSB.print(" Position: ");
+    // double current_angle = (enc1.getAngle() - 90);
+    // SerialUSB.println(current_angle);
 
-    // DUMB TEST MOTOR
-    
+    // // Test gravity compensation
+    // double output;
+    // current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
+    // maintainStateProto(*current_rotation, &output);
+    // printf("current output: %f\r\n", output);
+    // printf("Current voltage: %f\n", output);
+    // if (output < 0)
+    // {
+    //     digitalWrite(DIR1, HIGH);
+    // }
+    // else
+    // {
+    //     digitalWrite(DIR1, LOW);
+    // }
+    // int analog_write_output = (output / 24) * 255;
+    // printf("Current analog output: %d\n", analog_write_output);
+    // analogWrite(PWM1, analog_write_output);
 
     // delay(10);
     // analogWrite(PWM1, 200);
