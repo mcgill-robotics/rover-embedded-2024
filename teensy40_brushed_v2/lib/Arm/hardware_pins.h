@@ -38,8 +38,13 @@ const uint8_t LED_O = -1;
 const uint8_t LED_B = -1;
 
 const uint8_t CURRENT_SENSE_A = 19;
-
 const uint8_t CURRENT_SENSE_B = 20;
-
 const uint8_t CURRENT_SENSE_C = 21;
+
+const uint8_t LIM_1 = 9;
+const uint8_t LIM_2 = 10;
+const uint8_t LIM_3 = 11;
+const uint8_t LIM_4 = 12;
+const uint8_t LIM_5 = 22;
+const uint8_t LIM_6 = 23;
 #endif
