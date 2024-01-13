@@ -15,6 +15,10 @@ driver_motor mot1;
 driver_motor mot2;
 driver_motor mot3;
 
+// test thingy
+int stage = 0;
+int pos = 90;
+
 // Define the size of the moving average window
 #define MOVING_AVERAGE_SIZE 10
 float cur1_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
@@ -158,7 +162,7 @@ void setup()
     current_rotation = Rotation2d::getRotationFromDeg(0);
     SerialUSB.println("Done Setup");
 }
-
+/* Comment out working test loop
 void loop()
 {
     delay(100);
@@ -260,6 +264,29 @@ void loop()
 
     SerialUSB.println();
 }
+*/
+
+void loop()
+{
+    delay(100);
+
+   if (stage){
+    SerialUSB.println("Already reached target position");
+   }
+   else{
+    mot1.set_target_position(pos);
+    mot1.closed_loop_control_tick();
+    float enc1_angle = mot1._encoder->get_angle();
+    SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
+
+     if (enc1_angle == pos){
+        SerialUSB.println("Reached target position");
+        stage++;
+    }
+   }   
+
+}
+
 void lim1ISR()
 {
     static unsigned long last_interrupt_time = 0;
