@@ -5,22 +5,45 @@
 #include "model_sensor.h"
 #include "motor.h"
 
+#include <memory>
+
 #define OUTA_Pin ENCPIN1_1
 #define OUTB_Pin ENCPIN1_2
 
-model_encoder enc1;
-model_sensor cur1;
+// DUMB POINTERS
 driver_motor mot1;
-
-model_encoder enc2;
-model_sensor cur2;
 driver_motor mot2;
-
-model_encoder enc3;
-model_sensor cur3;
 driver_motor mot3;
 
-int counter = 0; // Ensure counter is initialized
+// Define the size of the moving average window
+#define MOVING_AVERAGE_SIZE 10
+float cur1_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
+float cur2_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
+float cur3_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
+int cur1_voltage_buffer_idx = 0;
+int cur2_voltage_buffer_idx = 0;
+int cur3_voltage_buffer_idx = 0;
+float moving_average(float new_reading, float *buffer, int buffer_size, int *buffer_idx)
+{
+    float sum = 0;
+    float oldest_reading = buffer[*buffer_idx];
+
+    // Add the new reading to the buffer.
+    buffer[*buffer_idx] = new_reading;
+    *buffer_idx = (*buffer_idx + 1) % buffer_size; // Circular buffer
+
+    // Sum all readings.
+    for (int i = 0; i < buffer_size; i++)
+    {
+        sum += buffer[i];
+    }
+    sum -= oldest_reading;
+
+    return sum / buffer_size;
+}
+
+// Ensure counter is initialized
+int counter = 0;
 
 Rotation2d *current_rotation;
 
@@ -46,30 +69,55 @@ void setup()
 {
     SerialUSB.begin(115200);
 
-    // SENSORS
-    // 43000 for wrist pitch
-    enc1.initialize_encoder(0, 0, 43000, 1);
-    cur1.initialize_sensor(CURRENT_SENSE_A);
+    std::unique_ptr<model_encoder> enc1 = std::make_unique<model_encoder>();
+    std::unique_ptr<model_sensor> cur1 = std::make_unique<model_sensor>();
 
-    enc2.initialize_encoder(0, 0, 43000, 2);
-    cur2.initialize_sensor(CURRENT_SENSE_B);
+    std::unique_ptr<model_encoder> enc2 = std::make_unique<model_encoder>();
+    std::unique_ptr<model_sensor> cur2 = std::make_unique<model_sensor>();
 
-    enc3.initialize_encoder(0, 0, 43000, 3);
-    cur3.initialize_sensor(CURRENT_SENSE_C);
+    std::unique_ptr<model_encoder> enc3 = std::make_unique<model_encoder>();
+    std::unique_ptr<model_sensor> cur3 = std::make_unique<model_sensor>();
 
-    SerialUSB.println("Done Setup");
+    // Initialize encoders
+    // 43000 clicks for wrist pitch, TODO check others
+    // Only using 1 & 2 becase 1 & 3 conflicts
+    enc1->initialize_encoder(0, 0, 43000, 1);
+    enc2->initialize_encoder(0, 0, 43000, 2);
+    // enc3->initialize_encoder(0, 0, 43000, 3);
+
+    // Initialize current sensors
+    cur1->initialize_sensor(CURRENT_SENSE_A);
+    cur3->initialize_sensor(CURRENT_SENSE_C);
+    cur2->initialize_sensor(CURRENT_SENSE_B);
+
+    // Initialize motors
+    mot1.attach_encoder(std::move(enc1));
+    mot2.attach_encoder(std::move(enc2));
+    mot3.attach_encoder(std::move(enc3));
+
+    mot1.attach_current_sensor(std::move(cur1));
+    mot2.attach_current_sensor(std::move(cur2));
+    mot3.attach_current_sensor(std::move(cur3));
+
+    mot1.initialize_motor(0, PWMPIN1, DIRPIN1, nSLEEP1, 5.0, 0.0);
+    mot2.initialize_motor(0, PWMPIN2, DIRPIN2, nSLEEP2, 5.0, 0.0);
+    mot3.initialize_motor(0, PWMPIN3, DIRPIN3, nSLEEP3, 5.0, 0.0);
 
     // Initialize Pins
-    pinMode(PWMPIN1, OUTPUT);
-    pinMode(DIRPIN1, OUTPUT);
-    pinMode(nSLEEP1, OUTPUT);
-    pinMode(PWMPIN2, OUTPUT);
-    pinMode(DIRPIN2, OUTPUT);
-    pinMode(nSLEEP2, OUTPUT);
-    pinMode(PWMPIN3, OUTPUT);
-    pinMode(DIRPIN3, OUTPUT);
-    pinMode(nSLEEP3, OUTPUT);
+    // pinMode(PWMPIN1, OUTPUT);
+    // pinMode(DIRPIN1, OUTPUT);
+    // pinMode(nSLEEP1, OUTPUT);
+    // pinMode(PWMPIN2, OUTPUT);
+    // pinMode(DIRPIN2, OUTPUT);
+    // pinMode(nSLEEP2, OUTPUT);
+    // pinMode(PWMPIN3, OUTPUT);
+    // pinMode(DIRPIN3, OUTPUT);
+    // pinMode(nSLEEP3, OUTPUT);
 
+    // pinMode(ENCPIN3_1, INPUT);
+    // pinMode(ENCPIN3_2, INPUT);
+
+    // Limit Switches
     pinMode(LIM_1, INPUT);
     pinMode(LIM_2, INPUT);
     pinMode(LIM_3, INPUT);
@@ -108,47 +156,57 @@ void setup()
 
     // Modelling
     current_rotation = Rotation2d::getRotationFromDeg(0);
+    SerialUSB.println("Done Setup");
 }
 
 void loop()
 {
-    printf("LIM_1: %d, LIM_2: %d, LIM_3: %d, LIM_4: %d, LIM_5: %d, LIM_6: %d\n",
-           lim1_state, lim2_state, lim3_state, lim4_state, lim5_state, lim6_state);
-
     delay(100);
-    // DUMB TEST MOTOR
-    // analogWrite(PWMPIN1, 50);
-    // delay(1000);
-    // analogWrite(PWMPIN1, 125);
-    // delay(1000);
-    // SerialUSB.println(digitalRead(ENCPIN1_1));
 
-    // TEST CURRENT SENSOR
-    // cur1.read_sensor_value();
-    // cur2.read_sensor_value();
-    // cur3.read_sensor_value();
-    // float cur1_current = cur1.getCurrent();
-    // float cur2_current = cur2.getCurrent();
-    // float cur3_current = cur3.getCurrent();
-    // SerialUSB.printf("cur1_current: %f, cur2_current: %f, cur3_current: %f ", cur1_current, cur2_current, cur3_current);
+    // TEST LIMIT SWITCHES --------------------------------------------------------------------
+    // printf("LIM_1: %d, LIM_2: %d, LIM_3: %d, LIM_4: %d, LIM_5: %d, LIM_6: %d\n",
+    //        lim1_state, lim2_state, lim3_state, lim4_state, lim5_state, lim6_state);
 
-    // TEST ENCODER
-    // enc1.read_encoder_angle();
-    // enc2.read_encoder_angle();
-    // enc3.read_encoder_angle();
-    // float enc1_angle = (enc1.getAngle());
-    // float enc2_angle = (enc2.getAngle());
-    // float enc3_angle = (enc3.getAngle());
-    // SerialUSB.printf("enc1_angle: %f, enc2_angle: %f, enc3_angle: %f", enc1_angle, enc2_angle, enc3_angle);
+    // TEST CURRENT SENSOR --------------------------------------------------------------------
+    mot1._current_sensor->read_sensor_value();
+    mot2._current_sensor->read_sensor_value();
+    mot3._current_sensor->read_sensor_value();
 
-    // SerialUSB.println();
+    // TODO check implementation of get_current()
+    float cur1_current = mot1._current_sensor->get_current();
+    float cur2_current = mot2._current_sensor->get_current();
+    float cur3_current = mot3._current_sensor->get_current();
 
-    // Test gravity compensation
+    // Middle value is 1.5V
+    float cur1_voltage = mot1._current_sensor->get_raw_voltage() - 1.5;
+    float cur2_voltage = mot2._current_sensor->get_raw_voltage() - 1.5;
+    float cur3_voltage = mot3._current_sensor->get_raw_voltage() - 1.5;
+    float smoothed_cur1_voltage = moving_average(cur1_voltage, cur1_voltage_buffer, MOVING_AVERAGE_SIZE, &cur1_voltage_buffer_idx);
+    float smoothed_cur2_voltage = moving_average(cur2_voltage, cur2_voltage_buffer, MOVING_AVERAGE_SIZE, &cur2_voltage_buffer_idx);
+    float smoothed_cur3_voltage = moving_average(cur3_voltage, cur3_voltage_buffer, MOVING_AVERAGE_SIZE, &cur3_voltage_buffer_idx);
+
+    // SerialUSB.printf("cur1_current: %8.4f, cur2_current: %8.4f, cur3_current: %8.4f ",
+    //                  cur1_current, cur2_current, cur3_current);
+    SerialUSB.printf("cur1_voltage: %8.4f, cur2_voltage: %8.4f, cur3_voltage: %8.4f ",
+                     smoothed_cur1_voltage, smoothed_cur2_voltage, smoothed_cur3_voltage);
+
+    // TEST ENCODER --------------------------------------------------------------------
+    // Channel 3 is conflicted, unused
+    mot1._encoder->read_encoder_angle();
+    mot2._encoder->read_encoder_angle();
+    // mot3._encoder->read_encoder_angle();
+    float enc1_angle = mot1._encoder->get_angle();
+    float enc2_angle = mot2._encoder->get_angle();
+    // float enc3_angle = mot3._encoder->get_angle();
+    SerialUSB.printf("enc1_angle: %8.4f, enc2_angle: %8.4f, enc3_angle: %8.4f",
+                     enc1_angle, enc2_angle, 0);
+
+    // TEST GRAVITY COMPENSATION --------------------------------------------------------------------
     // double output;
     // current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
     // maintainStateProto(*current_rotation, &output);
-    // printf("current output: %f\r\n", output);
-    // printf("Current voltage: %f\n", output);
+    // printf("current output: %8.4f\r\n", output);
+    // printf("Current voltage: %8.4f\n", output);
     // if (output < 0)
     // {
     //     digitalWrite(DIR1, HIGH);
@@ -161,13 +219,7 @@ void loop()
     // printf("Current analog output: %d\n", analog_write_output);
     // analogWrite(PWM1, analog_write_output);
 
-    // delay(10);
-    // analogWrite(PWM1, 200);
-    // delay(1000);
-    // analogWrite(PWM1, 50);
-    // delay(1000);
-
-    // DUMB VERSION
+    // ENCODER PINS TEST --------------------------------------------------------------------
     // SerialUSB.printf("ENCPIN1_1: %d, ENCPIN1_2: %d ", digitalRead(ENCPIN1_1), digitalRead(ENCPIN1_2));
     // SerialUSB.printf("ENCPIN2_1: %d, ENCPIN2_2: %d ", digitalRead(ENCPIN2_1), digitalRead(ENCPIN2_2));
     // SerialUSB.printf("ENCPIN3_1: %d, ENCPIN3_2: %d\n", digitalRead(ENCPIN3_1), digitalRead(ENCPIN3_2));
@@ -205,6 +257,8 @@ void loop()
     //         counter = 180;
     // }
     // SerialUSB.println(counter);
+
+    SerialUSB.println();
 }
 void lim1ISR()
 {

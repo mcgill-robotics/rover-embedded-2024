@@ -28,7 +28,7 @@ public:
 
     float read_encoder_angle(void);
 
-    float getAngle(void);
+    float get_angle(void);
 
     void set_parameters(uint8_t direction, float offset, float resolution);
 

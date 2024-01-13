@@ -79,7 +79,7 @@ float model_encoder::read_encoder_angle()
     return _angle;
 }
 
-float model_encoder::getAngle()
+float model_encoder::get_angle()
 {
     return _angle;
 }
