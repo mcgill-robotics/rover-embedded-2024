@@ -17,6 +17,8 @@
 #include "model_encoder.h"
 #include "model_sensor.h"
 
+#include <memory>
+
 #define _MAX_PWM_FREQUENCY 146484.38
 #define _PWM_BIT_RESOLUTION 10
 #define _PWM_OUTPUT_RESOLUTION 1023
@@ -52,13 +54,13 @@ public:
 	/// @param period
 	void set_control_period(float period);
 
-	float getSetTorque(void);
+	float get_target_torque(void);
 
 	float getOutputMotor(void);
 
-	float getSetPosition(void);
+	float get_target_position(void);
 
-	float getSetSpeed(void);
+	float get_target_speed(void);
 	/**
 	 * Control torque output
 	 *
@@ -79,8 +81,23 @@ public:
 	 */
 	void _pwm_write_duty(uint8_t pwmPin, uint32_t pwmDuty);
 
-private:
-	model_encoder *_encoder = nullptr;
+	void attach_encoder(std::unique_ptr<model_encoder> encoder)
+	{
+		_encoder = std::move(encoder);
+	}
+
+	void attach_current_sensor(std::unique_ptr<model_sensor> current_sensor)
+	{
+		_current_sensor = std::move(current_sensor);
+	}
+
+	void closed_loop_control_tick();
+
+// private:
+	// model_encoder *_encoder = nullptr;
+	// model_sensor *_current_sensor = nullptr;
+	std::unique_ptr<model_encoder> _encoder;
+	std::unique_ptr<model_sensor> _current_sensor;
 
 	uint8_t _motorPwmPin;
 	uint8_t _motorDirPin;
@@ -151,8 +168,6 @@ private:
 	 * @param		pwmFreq desired hardware PWM frequency
 	 */
 	void _pwm_setup(uint8_t pwmPin, float pwmFreq);
-
-	void driver_motor::closed_loop_control_tick();
 };
 
 #endif

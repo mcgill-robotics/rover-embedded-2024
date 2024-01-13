@@ -26,19 +26,22 @@ public:
 
 	float read_sensor_value(void);
 
-	float getCurrent(void);
+	float get_current(void);
 
-	int16_t getCurrent16(void);
+	int16_t get_current_16(void);
+
+	float get_raw_voltage(void);
 
 private:
 	ADC *_adc;
 
-	int32_t _sensorValue;
+	int32_t _sensor_value;
 	uint8_t _pin;
 	float _current;
+	float _raw_voltage;
 	int16_t _current16;
 
-	int32_t _sensorOffset;
+	int32_t _sensor_offset;
 
 	void _initialize_adc(void);
 

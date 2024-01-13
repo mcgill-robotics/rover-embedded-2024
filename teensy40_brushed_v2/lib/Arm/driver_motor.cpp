@@ -45,13 +45,13 @@ void driver_motor::initialize_motor(uint8_t directionMotor, uint8_t motorPWMPin,
 	_errorDir = 0.0;
 
 	// initializes pins and resolution
-	_pwm_set_resolution(_PWM_BIT_RESOLUTION);
+	// _pwm_set_resolution(_PWM_BIT_RESOLUTION);
 
 	pinMode(_motorPwmPin, OUTPUT);
 	pinMode(_motorDirPin, OUTPUT);
 	pinMode(_motorFaultPin, OUTPUT);
 
-	_pwm_setup(_motorPwmPin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
+	// _pwm_setup(_motorPwmPin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
 }
 
 /// @brief Sets the torque and writes the PWM value to the motor
@@ -61,7 +61,7 @@ void driver_motor::set_target_torque(float torque)
 	_targetTorque = torque;
 }
 
-float driver_motor::getSetTorque(void)
+float driver_motor::get_target_torque(void)
 {
 	return _targetTorque;
 }

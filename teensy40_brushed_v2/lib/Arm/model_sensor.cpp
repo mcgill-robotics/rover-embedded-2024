@@ -13,8 +13,8 @@
 
 void model_sensor::initialize_sensor(uint8_t pin)
 {
-	_sensorValue = 0;
-	_sensorOffset = 0;
+	_sensor_value = 0;
+	_sensor_offset = 0;
 
 	_pin = pin;
 
@@ -27,37 +27,42 @@ void model_sensor::initialize_sensor(uint8_t pin)
 	for (uint8_t i = 0; i < 40; i++)
 	{
 		_update_sensor_value();
-		_sensorOffset = _sensorOffset + _sensorValue;
+		_sensor_offset = _sensor_offset + _sensor_value;
 	}
 
-	_sensorOffset = _sensorOffset / 40;
+	_sensor_offset = _sensor_offset / 40;
 
-	_sensorOffset = 1862 - _sensorOffset;
+	_sensor_offset = 1862 - _sensor_offset;
 }
 
 void model_sensor::reset_sensor(void)
 {
-	_sensorValue = 0;
+	_sensor_value = 0;
 }
 
 float model_sensor::read_sensor_value(void)
 {
 	_update_sensor_value();
-	float sensorValue = _sensorValue + _sensorOffset;
+	float sensorValue = _sensor_value + _sensor_offset;
 	_current16 = sensorValue - 1862;
-	sensorValue = sensorValue * (3.3 / 4095.0);
-	_current = (sensorValue - 1.5) * 2;
+	_raw_voltage = sensorValue * (3.3 / 4095.0);
+	_current = (_raw_voltage - 1.5) * 2;
 	return _current;
 }
 
-float model_sensor::getCurrent(void)
+float model_sensor::get_current(void)
 {
 	return _current;
 }
 
-int16_t model_sensor::getCurrent16(void)
+int16_t model_sensor::get_current_16(void)
 {
 	return _current16;
+}
+
+float model_sensor::get_raw_voltage(void)
+{
+	return _raw_voltage;
 }
 
 void model_sensor::_update_sensor_value(void)
@@ -66,9 +71,9 @@ void model_sensor::_update_sensor_value(void)
 	// 		_pin == CURRENT_SENSE_B1 ||
 	// 		_pin == CURRENT_SENSE_A2 ||
 	// 		_pin == CURRENT_SENSE_B2) {
-	//     _sensorValue = _adc->adc1->analogRead(_pin);
+	//     _sensor_value = _adc->adc1->analogRead(_pin);
 	// }else{
-	_sensorValue = _adc->adc0->analogRead(_pin);
+	_sensor_value = _adc->adc0->analogRead(_pin);
 	// }
 }
 
