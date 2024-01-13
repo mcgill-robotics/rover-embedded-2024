@@ -15,76 +15,77 @@
 /// @param direction Positive direction for motor
 /// @param port Port used for motor connection
 /// @param maxTorque Maximum torque motor can output
-void driver_motor::initialize_motor(uint8_t directionMotor, uint8_t motorPWMPin, uint8_t motorDirPin, uint8_t motorFaultPin, float maxTorqueMotor, float torqueConstantMotor)
+void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_pin, uint8_t motor_dir_pin, uint8_t motor_fault_pin, float max_torque_motor, float torque_constant_motor)
 {
-	_rotationalDirectionMotor = directionMotor;
-	_motorMaxTorque = maxTorqueMotor;
-	_targetTorque = 0.0;
-	_targetPosition = 0.0;
-	_outputMotor = 0;
+	_rotational_direction_motor = direction_motor;
+	_motor_max_torque = max_torque_motor;
+	_torque_constant_motor = torque_constant_motor;
+	_target_torque = 0.0;
+	_target_position = 0.0;
+	_output_motor = 0;
 
-	_ctrlPeriod = 0.0;
-	_samplingPeriod = 0.0;
+	_ctrl_period = 0.0;
+	_sampling_period = 0.0;
 
-	_motorDirPin = motorDirPin;
-	_motorFaultPin = motorFaultPin;
-	_motorPwmPin = motorPWMPin;
+	_motor_dir_pin = motor_dir_pin;
+	_motor_fault_pin = motor_fault_pin;
+	_motor_pwm_pin = motor_pwn_pin;
 
 	// kalman params
-	_kalmanGain = 0;
-	_currentEstimate = 0;
+	_kalman_gain = 0;
+	_current_estimate = 0;
 
-	_errEstimate = _ERR_ESTIMATE_INIT;
-	_lastEstimate = _LAST_ESTIMATE_INIT;
-	_errMeasure = _ERR_MEASURE_INIT;
+	_err_estimate = _ERR_ESTIMATE_INIT;
+	_last_estimate = _LAST_ESTIMATE_INIT;
+	_err_measure = _ERR_MEASURE_INIT;
 	_q = _Q_INIT;
 
 	_error = 0.0;
-	_previousError = 0.0;
+	_previous_error = 0.0;
 
-	_errorInt = 0.0;
-	_errorDir = 0.0;
+	_error_int = 0.0;
+	_error_dir = 0.0;
 
 	// initializes pins and resolution
 	// _pwm_set_resolution(_PWM_BIT_RESOLUTION);
 
-	pinMode(_motorPwmPin, OUTPUT);
-	pinMode(_motorDirPin, OUTPUT);
-	pinMode(_motorFaultPin, OUTPUT);
+	pinMode(_motor_pwm_pin, OUTPUT);
+	pinMode(_motor_dir_pin, OUTPUT);
+	pinMode(_motor_fault_pin, OUTPUT);
 
-	// _pwm_setup(_motorPwmPin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
+	// _pwm_setup(_motor_pwm_pin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
 }
 
 /// @brief Sets the torque and writes the PWM value to the motor
 /// @param torque Torque value to be written to the motor
 void driver_motor::set_target_torque(float torque)
 {
-	_targetTorque = torque;
+	_target_torque = torque;
 }
 
 float driver_motor::get_target_torque(void)
 {
-	return _targetTorque;
+	return _target_torque;
 }
 
-float driver_motor::getOutputMotor(void)
+float driver_motor::get_output_motor(void)
 {
-	return _outputMotor;
+	return _output_motor;
 }
 
 void driver_motor::set_target_position(float position){
-	_targetPosition = position;
+	_target_position = position;
 }
 
 float driver_motor::get_target_position(void)
 {
-	return _targetPosition;
+	return _target_position;
 }
 
 void driver_motor::set_control_period(float period)
 {
-	_ctrlPeriod = period;
-	_samplingPeriod = _ctrlPeriod * 1e-6;
+	_ctrl_period = period;
+	_sampling_period = _ctrl_period * 1e-6;
 }
 
 void driver_motor::closed_loop_control_tick()
@@ -99,7 +100,7 @@ void driver_motor::torque_control(float motorCur)
 	bool direction = LOW;
 	float motorCurrent;
 
-	if (_rotationalDirectionMotor)
+	if (_rotational_direction_motor)
 	{
 		motorCurrent = motorCur;
 	}
@@ -108,75 +109,75 @@ void driver_motor::torque_control(float motorCur)
 		motorCurrent = -1 * motorCur;
 	}
 
-	_kalmanGain = _errEstimate / (_errEstimate + _errMeasure);
-	_currentEstimate = _lastEstimate + _kalmanGain * (motorCurrent - _lastEstimate);
+	_kalman_gain = _err_estimate / (_err_estimate + _err_measure);
+	_current_estimate = _last_estimate + _kalman_gain * (motorCurrent - _last_estimate);
 
-	_errEstimate = (1.0 - _kalmanGain) * _errEstimate + fabs(_lastEstimate - _currentEstimate) * _q;
-	_lastEstimate = _currentEstimate;
+	_err_estimate = (1.0 - _kalman_gain) * _err_estimate + fabs(_last_estimate - _current_estimate) * _q;
+	_last_estimate = _current_estimate;
 
-	_error = _targetTorque - _currentEstimate * _torqueConstantMotor;
-	_errorInt += _error * _samplingPeriod;
+	_error = _target_torque - _current_estimate * _torque_constant_motor;
+	_error_int += _error * _sampling_period;
 
 	// Bound the integral error such that it cannot saturate the motors
 	// The typical error is less than 1
-	if (_errorInt > _maxError)
+	if (_error_int > _maxError)
 	{
-		_errorInt = _maxError;
+		_error_int = _maxError;
 	}
-	else if (_errorInt < -_maxError)
+	else if (_error_int < -_maxError)
 	{
-		_errorInt = -_maxError;
+		_error_int = -_maxError;
 	}
 
 	// Calculate output
-	_outputMotor = _error * _KP + _errorInt * _KI + _errorDir * _KD;
+	_output_motor = _error * _KP + _error_int * _KI + _error_dir * _KD;
 
-	if (_outputMotor == _outputMotor)		//TODO: why are we comparing it to itself?
+	if (_output_motor == _output_motor)		//TODO: why are we comparing it to itself?
 	{
-		_outputMotor *= _PWM_OUTPUT_RESOLUTION / _motorMaxTorque;
+		_output_motor *= _PWM_OUTPUT_RESOLUTION / _motor_max_torque;
 	}
 	else
 	{
-		_outputMotor = 0.0;
+		_output_motor = 0.0;
 
 		_error = 0.0;
-		_previousError = 0.0;
+		_previous_error = 0.0;
 
-		_errorInt = 0.0;
-		_errorDir = 0.0;
+		_error_int = 0.0;
+		_error_dir = 0.0;
 	}
 
 	// Set direction
-	if (_rotationalDirectionMotor == 0)
+	if (_rotational_direction_motor == 0)
 	{
 		direction = !direction;
 	}
 
-	if (_outputMotor <= 0)
+	if (_output_motor <= 0)
 	{
-		digitalWrite(_motorDirPin, direction);
+		digitalWrite(_motor_dir_pin, direction);
 	}
 	else
 	{
-		digitalWrite(_motorDirPin, !direction);
+		digitalWrite(_motor_dir_pin, !direction);
 	}
 
 	// output torque
-	_outputMotor = abs(_outputMotor);
-	if (_outputMotor > _PWM_OUTPUT_RESOLUTION)
+	_output_motor = abs(_output_motor);
+	if (_output_motor > _PWM_OUTPUT_RESOLUTION)
 	{
-		_pwm_write_duty(_motorPwmPin, _PWM_OUTPUT_RESOLUTION);
+		_pwm_write_duty(_motor_pwm_pin, _PWM_OUTPUT_RESOLUTION);
 	}
 	else
 	{
-		_pwm_write_duty(_motorPwmPin, (uint32_t)_outputMotor);
+		_pwm_write_duty(_motor_pwm_pin, (uint32_t)_output_motor);
 	}
 }
 /// @brief Sets the positive direction of the motor
 /// @param direction new positive direction of the motor
 void driver_motor::setDirection(uint8_t direction)
 {
-	_rotationalDirectionMotor = direction;
+	_rotational_direction_motor = direction;
 }
 
 /// @brief Sets the resolution of the motor

@@ -56,7 +56,7 @@ public:
 
 	float get_target_torque(void);
 
-	float getOutputMotor(void);
+	float get_output_motor(void);
 
 	float get_target_position(void);
 
@@ -99,26 +99,26 @@ public:
 	std::unique_ptr<model_encoder> _encoder;
 	std::unique_ptr<model_sensor> _current_sensor;
 
-	uint8_t _motorPwmPin;
-	uint8_t _motorDirPin;
-	uint8_t _motorFaultPin;
+	uint8_t _motor_pwm_pin;
+	uint8_t _motor_dir_pin;
+	uint8_t _motor_fault_pin;
 
-	uint8_t _rotationalDirectionMotor;
-	float _motorMaxTorque;
-	float _motorMaxSpeed;
-	float _motorMaxPosition;
-	float _motorMinPosition;
+	uint8_t _rotational_direction_motor;
+	float _motor_max_torque;
+	float _motor_max_speed;
+	float _motor_max_position;
+	float _motor_min_position;
 
-	float _targetTorque;
-	float _targetPosition;
+	float _target_torque;
+	float _target_position;
 	float _targetSpeed;
 
 	// PID parameters
-	float _outputMotor;
-	float _ctrlPeriod;
-	float _samplingPeriod;
+	float _output_motor;
+	float _ctrl_period;
+	float _sampling_period;
 
-	float _torqueConstantMotor;
+	float _torque_constant_motor;
 
 	const float _pi = 3.14159265358979;
 	const float _KP = 4.0;
@@ -133,22 +133,22 @@ public:
 	const float _ERR_MEASURE_INIT = 1.877e-3;
 	const float _Q_INIT = 0.0044;
 
-	float _errEstimate;
-	float _lastEstimate;
-	float _errMeasure;
+	float _err_estimate;
+	float _last_estimate;
+	float _err_measure;
 	float _q;
 
-	float _kalmanGain;
-	float _currentEstimate;
+	float _kalman_gain;
+	float _current_estimate;
 
 	// Error parameters and variables
 	const float _maxError = 2.0; // 10000.0; //2.0;
 
 	float _error;
-	float _previousError;
+	float _previous_error;
 
-	float _errorInt;
-	float _errorDir;
+	float _error_int;
+	float _error_dir;
 
 	// const float _MAX_PWM_FREQUENCY = 146484.38;
 	// const uint8_t _PWM_BIT_RESOLUTION = 10;
