@@ -15,12 +15,13 @@
 #define RADIO_MODE_RX 1
 
 // COMPILATION FLAGS
-#define RADIO_MODE RADIO_MODE_TX
+#define RADIO_MODE RADIO_MODE_RX
 
 // PIN DEFINITIONS
 const int BUTTON_PIN = 2;
 const int LED_PIN = 2;
 const int TRANSISTOR_PIN = 14;
+const int BUZZER=5;
 
 // BLUETOOTH ------------------------------------------------------------------------------
 // BT: Bluetooth availabilty check
@@ -43,6 +44,7 @@ int lastReadTime = 0;
 void tx_setup()
 {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(BUZZER, OUTPUT);
 
   Serial.begin(115200);
 
@@ -75,6 +77,10 @@ void tx_loop()
   if (button_state == HIGH)
   {
     ESP_BT.println("ON"); // Send "ON" via Bluetooth
+    tone(BUZZER, 1000);
+    delay(500);
+    noTone(BUZZER);
+    delay(10000);
   }
   else
   {
@@ -88,6 +94,7 @@ void rx_setup()
   // Transistor gate connected to GPIO 14.
   pinMode(TRANSISTOR_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
 
   Serial.begin(115200);     // Start Serial communication for debugging
   ESP_BT.begin("ESP32_RX"); // Start Bluetooth with name ESP32_RX
@@ -115,6 +122,10 @@ void rx_loop()
     {
       digitalWrite(LED_PIN, HIGH); // Turn the LED on
       digitalWrite(TRANSISTOR_PIN, HIGH);
+      tone(BUZZER, 85);
+      delay(1000);
+      noTone(BUZZER);
+      delay(10000);
       Serial.println("SWITCH HIGH");
     }
     else if (msg == "OFF")
