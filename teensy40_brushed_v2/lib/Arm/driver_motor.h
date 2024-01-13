@@ -17,6 +17,8 @@
 #include "model_encoder.h"
 #include "model_sensor.h"
 
+#include "pid.h"
+
 #include <memory>
 
 #define _MAX_PWM_FREQUENCY 146484.38
@@ -117,6 +119,8 @@ public:
 	float _output_motor;
 	float _ctrl_period;
 	float _sampling_period;
+
+	PID *pid_instance;
 
 	float _torque_constant_motor;
 

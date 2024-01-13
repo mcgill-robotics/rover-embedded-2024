@@ -10,6 +10,7 @@
  *
  */
 #include "driver_motor.h"
+#include "pid.cpp"
 
 /// @brief Initializes the motor object
 /// @param direction Positive direction for motor
@@ -53,7 +54,11 @@ void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_p
 	pinMode(_motor_dir_pin, OUTPUT);
 	pinMode(_motor_fault_pin, OUTPUT);
 
+	//TODO: is this not necessary for pid?
 	// _pwm_setup(_motor_pwm_pin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
+
+	//TODO: Including PID initialization here, potentially move later
+	pid_instance = new PID(0.1,24,0, 0.1, 0, 0);		//TODO: all arguments are arbitrary...just trying to get it to work
 }
 
 /// @brief Sets the torque and writes the PWM value to the motor
@@ -90,8 +95,21 @@ void driver_motor::set_control_period(float period)
 
 void driver_motor::closed_loop_control_tick()
 {
-	//TODO: PID implementation 
+	//TODO: PID implementation here
+	//Get the differnce
+	this->_encoder->read_encoder_angle();
+	float current_postion = this->_encoder->get_angle();
 
+	//For later, diff can influence PID coefficients
+	float diff = _target_position - current_postion;
+
+	//feed to PID
+	float output = pid_instance->calculate(_target_position, current_postion);
+
+	//output to motor
+	float pwm_output = output * 255.0 / 24.0;
+
+	this->_pwm_write_duty(_motor_pwm_pin, pwm_output);
 }
 
 void driver_motor::torque_control(float motor_cur)
