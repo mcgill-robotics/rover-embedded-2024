@@ -94,23 +94,23 @@ void driver_motor::closed_loop_control_tick()
 
 }
 
-void driver_motor::torque_control(float motorCur)
+void driver_motor::torque_control(float motor_cur)
 {
 
 	bool direction = LOW;
-	float motorCurrent;
+	float motor_current;
 
 	if (_rotational_direction_motor)
 	{
-		motorCurrent = motorCur;
+		motor_current = motor_cur;
 	}
 	else
 	{
-		motorCurrent = -1 * motorCur;
+		motor_current = -1 * motor_cur;
 	}
 
 	_kalman_gain = _err_estimate / (_err_estimate + _err_measure);
-	_current_estimate = _last_estimate + _kalman_gain * (motorCurrent - _last_estimate);
+	_current_estimate = _last_estimate + _kalman_gain * (motor_current - _last_estimate);
 
 	_err_estimate = (1.0 - _kalman_gain) * _err_estimate + fabs(_last_estimate - _current_estimate) * _q;
 	_last_estimate = _current_estimate;
