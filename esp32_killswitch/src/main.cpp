@@ -2,7 +2,6 @@
 #include "BluetoothSerial.h"
 #include "esp_gap_bt_api.h"
 
-#define DEBUG_MODE 0
 // INSTRUCTIONS
 //  1. Set RADIO_MODE to 0 for TX, 1 for RX and upload to ESP32.
 //  2. Power on slave (RX) ESP32.
@@ -10,13 +9,20 @@
 //  4. Wait for master to connect to slave.
 //  5. Press button on TX ESP32 to send "ON" to RX ESP32.
 
+#define DEBUG_MODE 0
+
+#define RADIO_MODE_TX 0
+#define RADIO_MODE_RX 1
+
+// COMPILATION FLAGS
+#define RADIO_MODE RADIO_MODE_TX
+
 // PIN DEFINITIONS
 const int BUTTON_PIN = 2;
 const int LED_PIN = 2;
 const int TRANSISTOR_PIN = 14;
 
-// BLUETOOTH
-
+// BLUETOOTH ------------------------------------------------------------------------------
 // BT: Bluetooth availabilty check
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run make menuconfig to and enable it
@@ -30,7 +36,6 @@ BluetoothSerial ESP_BT; // Object for Bluetooth
 const char *server_name = "ESP32_RX";
 const int maxRetries = 100000; // Maximum number of connection attempts
 const int retryDelay = 500;    // Delay between retries in milliseconds
-const int RADIO_MODE = 1;      // 0 = TX, 1 = RX
 
 int microsBetweenReadings = 1000;
 int lastReadTime = 0;
