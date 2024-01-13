@@ -20,6 +20,7 @@ void driver_motor::initialize_motor(uint8_t directionMotor, uint8_t motorPWMPin,
 	_rotationalDirectionMotor = directionMotor;
 	_motorMaxTorque = maxTorqueMotor;
 	_targetTorque = 0.0;
+	_targetPosition = 0.0;
 	_outputMotor = 0;
 
 	_ctrlPeriod = 0.0;
@@ -71,6 +72,15 @@ float driver_motor::getOutputMotor(void)
 	return _outputMotor;
 }
 
+void driver_motor::set_target_position(float position){
+	_targetPosition = position;
+}
+
+float driver_motor::get_target_position(void)
+{
+	return _targetPosition;
+}
+
 void driver_motor::set_control_period(float period)
 {
 	_ctrlPeriod = period;
@@ -79,7 +89,8 @@ void driver_motor::set_control_period(float period)
 
 void driver_motor::closed_loop_control_tick()
 {
-	
+	//TODO: PID implementation 
+
 }
 
 void driver_motor::torque_control(float motorCur)
@@ -120,7 +131,7 @@ void driver_motor::torque_control(float motorCur)
 	// Calculate output
 	_outputMotor = _error * _KP + _errorInt * _KI + _errorDir * _KD;
 
-	if (_outputMotor == _outputMotor)
+	if (_outputMotor == _outputMotor)		//TODO: why are we comparing it to itself?
 	{
 		_outputMotor *= _PWM_OUTPUT_RESOLUTION / _motorMaxTorque;
 	}
