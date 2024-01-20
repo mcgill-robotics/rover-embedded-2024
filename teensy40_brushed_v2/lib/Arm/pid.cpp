@@ -35,6 +35,8 @@ class PIDImpl
         PIDImpl( double dt, double max, double min, double Kp, double Kd, double Ki );
         ~PIDImpl();
         double calculate( double setpoint, double pv );
+        void set_PID(double Kp, double Ki, double Kd);
+
 
     private:
         double _dt;
@@ -56,6 +58,12 @@ double PID::calculate( double setpoint, double pv )
 {
     return pimpl->calculate(setpoint,pv);
 }
+
+void PID::set_PID(double Kp, double Ki, double Kd)
+{
+    pimpl->set_PID(Kp, Ki, Kd);
+}
+
 PID::~PID() 
 {
     delete pimpl;
@@ -107,6 +115,13 @@ double PIDImpl::calculate( double setpoint, double pv )
     _pre_error = error;
 
     return output;
+}
+
+void PIDImpl::set_PID(double Kp, double Ki, double Kd)
+{
+    _Kp = Kp;
+    _Ki = Ki;
+    _Kd = Kd;
 }
 
 PIDImpl::~PIDImpl()
