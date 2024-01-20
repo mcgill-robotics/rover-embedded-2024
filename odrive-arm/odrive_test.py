@@ -12,7 +12,7 @@ import odrive.utils
 import odrive.config
 from odrive.enums import AxisState, ProcedureResult
 from odrive.utils import dump_errors
-# import ODrive_utils 
+import ODrive_utils
 import time
 import math
 import threading
@@ -92,24 +92,24 @@ watchdog_thread.start()
 
 # Calibration and save config -------------------------------------------------------------------------
 print("starting calibration...")
-odrv_shoulder.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
-# calibrate_motors(odrv_shoulder)
+# odrv_shoulder.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
+calibrate_motors(odrv_shoulder)
 # time.sleep(10)
 # odrv_shoulder.axis0.config.motor.pre_calibrated = True
 
 
 
-odrv_shoulder.axis0.config.startup_encoder_offset_calibration = True
-odrv_shoulder.axis0.config.startup_closed_loop_control = True
+# odrv_shoulder.axis0.config.startup_encoder_offset_calibration = True
+# odrv_shoulder.axis0.config.startup_closed_loop_control = True
 
-odrv_shoulder.save_configuration()
-odrv_shoulder.reboot()
-# print("Checkpoint")
-# #dump_errors(odrv_shoulder)
+# odrv_shoulder.save_configuration()
+#odrv_shoulder.reboot()
+print("Checkpoint")
+#dump_errors(odrv_shoulder)
 
-# odrv_shoulder.controller.config.enable_vel_limit = True
-# odrv_shoulder.controller.config.VEL_LIMIT_TOLERANCE = 3
-# odrv_shoulder.controller.config.vel_limit = 3
+odrv_shoulder.controller.config.enable_vel_limit = True
+odrv_shoulder.controller.config.VEL_LIMIT_TOLERANCE = 3
+odrv_shoulder.controller.config.vel_limit = 3
 
 #while (odrv_shoulder.axis0.current_state != AxisState.IDLE) :
     #time.sleep(0.1)
