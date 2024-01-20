@@ -112,8 +112,8 @@ void driver_motor::closed_loop_control_tick()
 	// float forward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - current_postion) : (encoder_setpoint + _angle_full_turn - current_postion);
 	// float backward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - _angle_full_turn + current_postion) : (current_postion - encoder_setpoint);
 
-	float forward_distance = (_target_position > current_postion) ? (_target_position - current_postion) : (360.0 - current_postion + _target_position);	//CCW
-	float backward_distance = (_target_position > current_postion) ? (360.0-_target_position + current_postion) : (current_postion-_target_position);		//CW
+	float forward_distance = (_target_position > current_postion) ? (_target_position - current_postion) : (360.0 - current_postion + _target_position);  // CCW
+	float backward_distance = (_target_position > current_postion) ? (360.0 - _target_position + current_postion) : (current_postion - _target_position); // CW
 
 	// Feed to PID and determine error
 	float pid_output = 0.0;
