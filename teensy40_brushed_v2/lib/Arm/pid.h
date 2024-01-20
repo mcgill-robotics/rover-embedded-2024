@@ -37,6 +37,9 @@ class PID
 
         // Returns the manipulated variable given a setpoint and current process value
         double calculate( double setpoint, double pv );
+
+        // Sets new values for the PID
+        void set_PID(double Kp, double Ki, double Kd);
         ~PID();
 
     private:

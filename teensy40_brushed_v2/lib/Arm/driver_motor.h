@@ -48,6 +48,10 @@ public:
 
 	void set_target_speed(float speed);
 
+	void set_direction (uint8_t direction);
+
+	void set_gear_ratio(float gear_ratio);
+
 	/// @brief Sets the positive direction of the motor
 	/// @param direction Positive direction of motor (CW or CCW)
 	void setDirection(uint8_t direction);
@@ -110,6 +114,8 @@ public:
 	float _motor_max_speed;
 	float _motor_max_position;
 	float _motor_min_position;
+	float _current_position;
+	float _angle_full_turn;
 
 	float _target_torque;
 	float _target_position;
@@ -123,7 +129,9 @@ public:
 	PID *pid_instance;
 
 	float _torque_constant_motor;
+	float _gear_ratio;
 
+	//TODO: Where are these values from? Are they the aggressive ones or normal ones?
 	const float _pi = 3.14159265358979;
 	const float _KP = 4.0;
 	const float _KI = 2.0;
