@@ -7,12 +7,13 @@
 from __future__ import print_function
 
 import odrive
+from odrive.config import Axis
 import odrive.enums
 import odrive.utils
 import odrive.config
 from odrive.enums import AxisState, ProcedureResult
 from odrive.utils import dump_errors
-import ODrive_utils
+# import ODrive_utils
 import time
 import math
 import threading
@@ -33,29 +34,32 @@ def watchdog():
         #i += 1
         # if (odrv_shoulder.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL or odrv_shoulder.axis0.current_state != AxisState.MOTOR_CALIBRATION or odrv_shoulder.axis0.current_state != AxisState.ENCODER_OFFSET_CALIBRATION):
         #     odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL 
-        
-        
-        print(
-            "Current state: "
-            + str(odrv_shoulder.axis0.current_state)
-            + ", "
-            + "Raw angle: "
-            + str(odrv_shoulder.rs485_encoder_group0.raw)
-            + "Current pos: "
-            +str(odrv_shoulder.axis0.pos_vel_mapper.pos_rel)
-            + ", "
-            + "input_pos="
-            + str(odrv_shoulder.axis0.controller.input_pos)
-            + ", "
-            + "closed_loop_index="
-            + str(int(AxisState.CLOSED_LOOP_CONTROL))
+    
+        try:
+            print(
+                "Current state: "
+                + str(odrv_shoulder.axis0.current_state)
+                + ", "
+                + "Raw angle: "
+                + str(odrv_shoulder.rs485_encoder_group0.raw)
+                + "Current pos: "
+                +str(odrv_shoulder.axis0.pos_vel_mapper.pos_rel)
+                + ", "
+                + "input_pos="
+                + str(odrv_shoulder.axis0.controller.input_pos)
+                + ", "
+                + "closed_loop_index="
+                + str(int(AxisState.CLOSED_LOOP_CONTROL))
+                # + ", velocity"
+                # + str(odrv_shoulder.axis0.controller.velocity)
+                
             
-        
-        )
-        time.sleep(
-            0.2
-        )  # Set the period for the watchdog prints (0.2 seconds in this example)
-
+            )
+            time.sleep(
+                1
+            )  # Set the period for the watchdog prints (0.2 seconds in this example)
+        except NameError:
+            pass
 
 # Find connected ODrive
 print("finding an odrive...")
@@ -89,27 +93,49 @@ watchdog_thread.start()
 # odrv_shoulder.rs485_encoder_group0.config.mode = Rs485EncoderMode.AMT21_POLLING
 # odrv_shoulder.axis0.config.load_encoder = EncoderId.RS485_ENCODER0
 # odrv_shoulder.axis0.config.commutation_encoder = EncoderId.RS485_ENCODER0
+odrv = odrv_shoulder
+odrv.config.dc_bus_overvoltage_trip_level = 30
+odrv.config.dc_max_positive_current = 5
+odrv.config.brake_resistor0.enable = True
+odrv.config.brake_resistor0.resistance = 3
+odrv.axis0.config.motor.motor_type = 0 #MotorType.HIGH_CURRENT
+odrv.axis0.config.motor.torque_constant = 0.06080882352941176
+odrv.axis0.config.motor.pole_pairs = 11
+odrv.axis0.config.motor.current_soft_max = 5
+odrv.axis0.config.motor.current_hard_max = 16.5
+odrv.axis0.config.motor.calibration_current = 2.5
+odrv.axis0.config.motor.resistance_calib_max_voltage = 2
+odrv.axis0.config.calibration_lockin.current = 2.5
+odrv.axis0.controller.config.input_mode = 1 #InputMode.PASSTHROUGH
+odrv.axis0.controller.config.control_mode = 3 #ControlMode.POSITION_CONTROL
+odrv.axis0.controller.config.vel_limit = 1
+odrv.axis0.controller.config.vel_limit_tolerance = 5
+# odrv.can.config.protocol = Protocol.NONE
+odrv.config.enable_uart_a = False
+odrv.rs485_encoder_group0.config.mode = 1 #Rs485EncoderMode.AMT21_POLLING
+odrv.axis0.config.load_encoder = 10 #EncoderId.RS485_ENCODER0
+odrv.axis0.config.commutation_encoder = 10 #EncoderId.RS485_ENCODER0
 
 # Calibration and save config -------------------------------------------------------------------------
 print("starting calibration...")
-# odrv_shoulder.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
-calibrate_motors(odrv_shoulder)
-# time.sleep(10)
+odrv.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
+
+while (odrv.axis0.current_state != AxisState.IDLE):
+    time.sleep(0.5)
+# calibrate_motors(odrv_shoulder)
 # odrv_shoulder.axis0.config.motor.pre_calibrated = True
 
 
 
-# odrv_shoulder.axis0.config.startup_encoder_offset_calibration = True
-# odrv_shoulder.axis0.config.startup_closed_loop_control = True
+odrv.axis0.config.startup_encoder_offset_calibration = True
+odrv.axis0.config.startup_closed_loop_control = True
 
 # odrv_shoulder.save_configuration()
-#odrv_shoulder.reboot()
+# odrv_shoulder.reboot()
 print("Checkpoint")
 #dump_errors(odrv_shoulder)
 
-odrv_shoulder.controller.config.enable_vel_limit = True
-odrv_shoulder.controller.config.VEL_LIMIT_TOLERANCE = 3
-odrv_shoulder.controller.config.vel_limit = 3
+# odrv.axis0.controller.config.enable_vel_limit = True
 
 #while (odrv_shoulder.axis0.current_state != AxisState.IDLE) :
     #time.sleep(0.1)
@@ -117,13 +143,14 @@ odrv_shoulder.controller.config.vel_limit = 3
 
 
 
-odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
+odrv.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
 
 dump_errors(odrv_shoulder)
 
-odrv_shoulder.axis0.controller.input_pos = 10
+# odrv_shoulder.axis0.controller.input_pos = 20
 
 dump_errors(odrv_shoulder)
+
 
 
 
