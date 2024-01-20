@@ -7,27 +7,50 @@
 from __future__ import print_function
 
 import odrive
+import odrive.enums
+import odrive.utils
+import odrive.config
 from odrive.enums import AxisState, ProcedureResult
 from odrive.utils import dump_errors
+# import ODrive_utils 
 import time
 import math
 import threading
 
+def move_clockwise(in_pos):
+    # odrv_shoulder.axis0.controller.config. 
+    odrv_shoulder.axis0.pos_vel_mapper.pos_rel
+    odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
+    current_pos = odrv_shoulder.axis0.rs485_encoder_group0.raw * 8192
+    odrv_shoulder.axis0.controller.input_pos = 2
+    return
+
 
 def watchdog():
+    i = 0
+    
     while not watchdog_stop_event.is_set():
+        #i += 1
+        # if (odrv_shoulder.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL or odrv_shoulder.axis0.current_state != AxisState.MOTOR_CALIBRATION or odrv_shoulder.axis0.current_state != AxisState.ENCODER_OFFSET_CALIBRATION):
+        #     odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL 
+        
+        
         print(
             "Current state: "
             + str(odrv_shoulder.axis0.current_state)
             + ", "
             + "Raw angle: "
             + str(odrv_shoulder.rs485_encoder_group0.raw)
+            + "Current pos: "
+            +str(odrv_shoulder.axis0.pos_vel_mapper.pos_rel)
             + ", "
             + "input_pos="
             + str(odrv_shoulder.axis0.controller.input_pos)
             + ", "
             + "closed_loop_index="
             + str(int(AxisState.CLOSED_LOOP_CONTROL))
+            
+        
         )
         time.sleep(
             0.2
@@ -70,16 +93,39 @@ watchdog_thread.start()
 # Calibration and save config -------------------------------------------------------------------------
 print("starting calibration...")
 odrv_shoulder.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
-odrv_shoulder.axis0.motor.config.pre_calibrated = True
+# calibrate_motors(odrv_shoulder)
+# time.sleep(10)
+# odrv_shoulder.axis0.config.motor.pre_calibrated = True
+
+
+
 odrv_shoulder.axis0.config.startup_encoder_offset_calibration = True
 odrv_shoulder.axis0.config.startup_closed_loop_control = True
-odrv_shoulder.save_configuration()
-# odrv_shoulder.reboot()
 
-while odrv_shoulder.axis0.current_state != AxisState.IDLE:
-    time.sleep(0.1)
+odrv_shoulder.save_configuration()
+odrv_shoulder.reboot()
+# print("Checkpoint")
+# #dump_errors(odrv_shoulder)
+
+# odrv_shoulder.controller.config.enable_vel_limit = True
+# odrv_shoulder.controller.config.VEL_LIMIT_TOLERANCE = 3
+# odrv_shoulder.controller.config.vel_limit = 3
+
+#while (odrv_shoulder.axis0.current_state != AxisState.IDLE) :
+    #time.sleep(0.1)
+
+
+
 
 odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
+
+dump_errors(odrv_shoulder)
+
+odrv_shoulder.axis0.controller.input_pos = 10
+
+dump_errors(odrv_shoulder)
+
+
 
 # Set reference -------------------------------------------------------------------------
 odrv_shoulder.axis0.pos_vel_mapper.config.offset = 0.244
@@ -96,6 +142,7 @@ print("Position setpoint is " + str(odrv_shoulder.axis0.controller.pos_setpoint)
 print("Requested state is " + str(odrv_shoulder.axis0.requested_state))
 print("Current state is " + str(odrv_shoulder.axis0.current_state))
 print("Current state is " + str(odrv_shoulder.rs485_encoder_group0.config.mode))
+
 
 # And this is how function calls are done:
 for i in [1, 2, 3, 4]:
