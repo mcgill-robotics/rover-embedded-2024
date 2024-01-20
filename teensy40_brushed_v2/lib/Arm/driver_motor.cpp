@@ -109,8 +109,11 @@ void driver_motor::closed_loop_control_tick()
 	float diff = abs(_target_position - current_postion);
 
 	// Determine whether to move forward or backwards
-	float forward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - current_postion) : (encoder_setpoint + _angle_full_turn - current_postion);
-	float backward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - _angle_full_turn + current_postion) : (current_postion - encoder_setpoint);
+	// float forward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - current_postion) : (encoder_setpoint + _angle_full_turn - current_postion);
+	// float backward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - _angle_full_turn + current_postion) : (current_postion - encoder_setpoint);
+
+	float forward_distance = (_target_position > current_postion) ? (_target_position - current_postion) : (360.0 - current_postion + _target_position);	//CCW
+	float backward_distance = (_target_position > current_postion) ? (360.0-_target_position + current_postion) : (current_postion-_target_position);		//CW
 
 	// Feed to PID and determine error
 	float pid_output = 0.0;
@@ -130,7 +133,7 @@ void driver_motor::closed_loop_control_tick()
 	// Forwards
 	else
 	{
-		set_direction(1); // st direction to forwards
+		set_direction(1); // set direction to forwards
 		if (encoder_setpoint > current_postion)
 		{
 			pid_output = pid_instance->calculate(encoder_setpoint, current_postion);
