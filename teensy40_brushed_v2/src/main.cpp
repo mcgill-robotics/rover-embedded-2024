@@ -270,21 +270,23 @@ void loop()
 {
     delay(100);
 
-   if (stage){
-    SerialUSB.println("Already reached target position");
-   }
-   else{
-    mot1.set_target_position(pos);
-    mot1.closed_loop_control_tick();
-    float enc1_angle = mot1._encoder->get_angle();
-    SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
-
-     if (enc1_angle == pos){
-        SerialUSB.println("Reached target position");
-        stage++;
+    if (stage)
+    {
+        SerialUSB.println("Already reached target position");
     }
-   }   
+    else
+    {
+        mot1.set_target_position(pos);
+        mot1.closed_loop_control_tick();
+        float enc1_angle = mot1._encoder->get_angle();
+        SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
 
+        if (enc1_angle == pos)
+        {
+            SerialUSB.println("Reached target position");
+            stage++;
+        }
+    }
 }
 
 void lim1ISR()
