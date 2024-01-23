@@ -48,9 +48,11 @@ public:
 
 	void set_target_speed(float speed);
 
-	void set_direction (uint8_t direction);
+	void set_direction(uint8_t direction);
 
 	void set_gear_ratio(float gear_ratio);
+
+	void set_is_circular_joint(boolean is_circular_joint);
 
 	/// @brief Sets the positive direction of the motor
 	/// @param direction Positive direction of motor (CW or CCW)
@@ -99,11 +101,13 @@ public:
 
 	void closed_loop_control_tick();
 
-// private:
+	// private:
 	// model_encoder *_encoder = nullptr;
 	// model_sensor *_current_sensor = nullptr;
 	std::unique_ptr<model_encoder> _encoder;
 	std::unique_ptr<model_sensor> _current_sensor;
+
+	boolean _is_circular_joint;
 
 	uint8_t _motor_pwm_pin;
 	uint8_t _motor_dir_pin;
@@ -114,7 +118,7 @@ public:
 	float _motor_max_speed;
 	float _motor_max_position;
 	float _motor_min_position;
-	float _current_position;
+	float _current_angle_es;
 	float _angle_full_turn;
 
 	float _target_torque;
@@ -131,7 +135,7 @@ public:
 	float _torque_constant_motor;
 	float _gear_ratio;
 
-	//TODO: Where are these values from? Are they the aggressive ones or normal ones?
+	// TODO: Where are these values from? Are they the aggressive ones or normal ones?
 	const float _pi = 3.14159265358979;
 	const float _KP = 4.0;
 	const float _KI = 2.0;

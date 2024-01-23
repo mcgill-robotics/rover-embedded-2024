@@ -53,6 +53,8 @@ private:
     float _angle;
     float _angularVelocity;
     velocity_estimation _velocityEstimation;
+    boolean _is_multi_turn;
+    int _turn_count;
 };
 
 #endif
