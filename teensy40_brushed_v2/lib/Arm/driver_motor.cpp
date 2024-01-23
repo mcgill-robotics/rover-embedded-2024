@@ -98,50 +98,59 @@ void driver_motor::set_control_period(float period)
 
 void driver_motor::closed_loop_control_tick()
 {
-	// encoder_setpoint is the desired angle after gear ratio translation
-	float encoder_setpoint = _target_position * _gear_ratio;
+	// IMPORTANT: es means encoder space
+	// setpoint_es is the desired angle after gear ratio translation
+	float setpoint_es = _target_position * _gear_ratio;
 
-	// current_position is the current angle after gear ratio translation
+	// current_angle_es is the current angle after gear ratio translation
 	this->_encoder->read_encoder_angle();
-	float current_postion = this->_encoder->get_angle();
+	float current_angle_es = this->_encoder->get_angle();
 
-	// For later, diff can influence PID coefficients(
-	float diff = abs(_target_position - current_postion);
+	// For later, diff can influence PID coefficients
+	float diff = abs(setpoint_es - current_angle_es);
 
 	// Determine whether to move forward or backwards
-	// float forward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - current_postion) : (encoder_setpoint + _angle_full_turn - current_postion);
-	// float backward_distance = (encoder_setpoint > current_postion) ? (encoder_setpoint - _angle_full_turn + current_postion) : (current_postion - encoder_setpoint);
+	float forward_distance = (setpoint_es > current_angle_es) ? (setpoint_es - current_angle_es) : (setpoint_es + _angle_full_turn - current_angle_es);
+	float backward_distance = (setpoint_es > current_angle_es) ? (_angle_full_turn - (setpoint_es - current_angle_es)) : (current_angle_es - setpoint_es);
 
-	float forward_distance = (_target_position > current_postion) ? (_target_position - current_postion) : (360.0 - current_postion + _target_position);  // CCW
-	float backward_distance = (_target_position > current_postion) ? (360.0 - _target_position + current_postion) : (current_postion - _target_position); // CW
+	// float forward_distance = (_target_position > current_angle_es) ? (_target_position - current_angle_es) : (360.0 - current_angle_es + _target_position);	 // CCW
+	// float backward_distance = (_target_position > current_angle_es) ? (360.0 - _target_position + current_angle_es) : (current_angle_es - _target_position); // CW
 
 	// Feed to PID and determine error
 	float pid_output = 0.0;
-	// Backwards
-	if (backward_distance < forward_distance - 10.0) // TODO: handle hysterics? 10.0 was used previously
+	if (_is_circular_joint)
 	{
-		set_direction(0); // set direction to backwards
-		if (encoder_setpoint < current_postion)
+		// Backwards
+		if (backward_distance < forward_distance - 10.0) // TODO: handle hysterics? 10.0 was used previously
 		{
-			pid_output = pid_instance->calculate(encoder_setpoint, current_postion);
+			set_direction(0); // set direction to backwards
+			if (setpoint_es < current_angle_es)
+			{
+				pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
+			}
+			else
+			{
+				pid_output = pid_instance->calculate(setpoint_es + _angle_full_turn, current_angle_es);
+			}
 		}
+		// Forwards
 		else
 		{
-			pid_output = pid_instance->calculate(encoder_setpoint + _angle_full_turn, current_postion);
+			set_direction(1); // set direction to forwards
+			if (setpoint_es > current_angle_es)
+			{
+				pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
+			}
+			else
+			{
+				pid_output = pid_instance->calculate(setpoint_es - _angle_full_turn, current_angle_es);
+			}
 		}
 	}
-	// Forwards
+	// Linear joint
 	else
 	{
-		set_direction(1); // set direction to forwards
-		if (encoder_setpoint > current_postion)
-		{
-			pid_output = pid_instance->calculate(encoder_setpoint, current_postion);
-		}
-		else
-		{
-			pid_output = pid_instance->calculate(encoder_setpoint - _angle_full_turn, current_postion);
-		}
+		pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
 	}
 
 	// output to motor
@@ -272,4 +281,9 @@ void driver_motor::set_gear_ratio(float gear_ratio)
 {
 	_gear_ratio = gear_ratio;
 	_angle_full_turn = 360.0f * _gear_ratio;
+}
+
+void driver_motor::set_is_circular_joint(bool is_circular_joint)
+{
+	_is_circular_joint = is_circular_joint;
 }
