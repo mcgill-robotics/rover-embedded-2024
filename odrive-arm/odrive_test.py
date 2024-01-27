@@ -116,64 +116,61 @@ odrv.rs485_encoder_group0.config.mode = 1 #Rs485EncoderMode.AMT21_POLLING
 odrv.axis0.config.load_encoder = 10 #EncoderId.RS485_ENCODER0
 odrv.axis0.config.commutation_encoder = 10 #EncoderId.RS485_ENCODER0
 
+
+
 # Calibration and save config -------------------------------------------------------------------------
 print("starting calibration...")
 odrv.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
 
 while (odrv.axis0.current_state != AxisState.IDLE):
     time.sleep(0.5)
-# calibrate_motors(odrv_shoulder)
-# odrv_shoulder.axis0.config.motor.pre_calibrated = True
+# calibrate_motors(odrv_shoulder) #us 
+# odrv.axis0.config.motor.pre_calibrated = True #put back later, we use this so no need to calibrate again
 
 
 
 odrv.axis0.config.startup_encoder_offset_calibration = True
 odrv.axis0.config.startup_closed_loop_control = True
-
-# odrv_shoulder.save_configuration()
-# odrv_shoulder.reboot()
+dump_errors(odrv)
+# odrv.save_configuration()
+# odrv.reboot()
 print("Checkpoint")
 #dump_errors(odrv_shoulder)
 
-# odrv.axis0.controller.config.enable_vel_limit = True
-
-#while (odrv_shoulder.axis0.current_state != AxisState.IDLE) :
-    #time.sleep(0.1)
 
 
 
 
 odrv.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
 
-dump_errors(odrv_shoulder)
+dump_errors(odrv)
 
 # odrv_shoulder.axis0.controller.input_pos = 20
 
-dump_errors(odrv_shoulder)
 
 
 
 
 # Set reference -------------------------------------------------------------------------
-odrv_shoulder.axis0.pos_vel_mapper.config.offset = 0.244
-odrv_shoulder.axis0.pos_vel_mapper.config.offset_valid = True
-odrv_shoulder.axis0.pos_vel_mapper.config.approx_init_pos = 0.244
-odrv_shoulder.axis0.pos_vel_mapper.config.approx_init_pos_valid = True
-odrv_shoulder.axis0.controller.config.absolute_setpoints = True
+odrv.axis0.pos_vel_mapper.config.offset = 0.244
+odrv.axis0.pos_vel_mapper.config.offset_valid = True
+odrv.axis0.pos_vel_mapper.config.approx_init_pos = 0.244
+odrv.axis0.pos_vel_mapper.config.approx_init_pos_valid = True
+odrv.axis0.controller.config.absolute_setpoints = True
 
 
 # Status -------------------------------------------------------------------------
-print("Serial is {}".format(odrv_shoulder.serial_number))
-print("Bus voltage is " + str(odrv_shoulder.vbus_voltage) + "V")
-print("Position setpoint is " + str(odrv_shoulder.axis0.controller.pos_setpoint))
-print("Requested state is " + str(odrv_shoulder.axis0.requested_state))
-print("Current state is " + str(odrv_shoulder.axis0.current_state))
-print("Current state is " + str(odrv_shoulder.rs485_encoder_group0.config.mode))
+print("Serial is {}".format(odrv.serial_number))
+print("Bus voltage is " + str(odrv.vbus_voltage) + "V")
+print("Position setpoint is " + str(odrv.axis0.controller.pos_setpoint))
+print("Requested state is " + str(odrv.axis0.requested_state))
+print("Current state is " + str(odrv.axis0.current_state))
+print("Current state is " + str(odrv.rs485_encoder_group0.config.mode))
 
 
 # And this is how function calls are done:
 for i in [1, 2, 3, 4]:
-    print("voltage on GPIO{} is {} Volt".format(i, odrv_shoulder.get_adc_voltage(i)))
+    print("voltage on GPIO{} is {} Volt".format(i, odrv.get_adc_voltage(i)))
 
 while True:
     try:
@@ -185,10 +182,10 @@ while True:
         continue  # Skip the rest of the loop and prompt for input again
 
     print(
-        f"goto {int(setpoint)}, currently at {odrv_shoulder.rs485_encoder_group0.raw}, state {odrv_shoulder.axis0.current_state}"
+        f"goto {int(setpoint)}, currently at {odrv.rs485_encoder_group0.raw}, state {odrv.axis0.current_state}"
     )
-    odrv_shoulder.axis0.controller.input_pos = setpoint
-    dump_errors(odrv_shoulder)
+    odrv.axis0.controller.input_pos = setpoint
+    dump_errors(odrv)
     time.sleep(0.01)
 
 # Stop watchdog thread, when closing the script -------------------------------------------------
