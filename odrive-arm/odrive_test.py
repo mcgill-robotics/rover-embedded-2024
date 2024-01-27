@@ -52,8 +52,7 @@ def watchdog():
                 + str(int(AxisState.CLOSED_LOOP_CONTROL))
                 # + ", velocity"
                 # + str(odrv_shoulder.axis0.controller.velocity)
-                
-            
+
             )
             time.sleep(
                 1
@@ -134,10 +133,7 @@ odrv.axis0.config.startup_closed_loop_control = True
 dump_errors(odrv)
 # odrv.save_configuration()
 # odrv.reboot()
-print("Checkpoint")
 #dump_errors(odrv_shoulder)
-
-
 
 
 
@@ -146,8 +142,6 @@ odrv.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
 dump_errors(odrv)
 
 # odrv_shoulder.axis0.controller.input_pos = 20
-
-
 
 
 
