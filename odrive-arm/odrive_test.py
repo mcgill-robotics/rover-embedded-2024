@@ -22,21 +22,12 @@ import math
 import threading
 import fibre
 
-# TODO find more
+# TODO find more serial, it is a string of hex of the serial number
 arm_serial_numbers = {
     "rover_arm_shoulder": "386434413539",
     "rover_arm_elbow": "0",
     "rover_arm_waist": "0",
 }
-
-
-def move_clockwise(in_pos):
-    # odrv_shoulder.axis0.controller.config.
-    odrv_shoulder.axis0.pos_vel_mapper.pos_rel
-    odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
-    current_pos = odrv_shoulder.axis0.rs485_encoder_group0.raw * 8192
-    odrv_shoulder.axis0.controller.input_pos = 2
-    return
 
 
 def watchdog():
@@ -188,18 +179,17 @@ class ODrive_Joint:
                 )
 
 
-# Find connected ODrive
-print("Finding ODrive...")
-# odrv_shoulder = odrive.find_any()
-test = arm_serial_numbers["rover_arm_shoulder"]
+# CONNECT TO ODRIVE ------------------------------------------------------------------
+print("FINDING ODrive...")
 odrv_shoulder = ODrive_Joint(
     odrive.find_any(serial_number=arm_serial_numbers["rover_arm_shoulder"], timeout=5)
 )
 
 # ERASE CONFIG -----------------------------------------------------------------------
+print("ERASING CONFIG...")
 odrv_shoulder.erase_config()
 
-
+# APPLY CONFIG -----------------------------------------------------------------------
 odrv_shoulder.odrv.config.dc_bus_overvoltage_trip_level = 30
 odrv_shoulder.odrv.config.dc_bus_undervoltage_trip_level = 10.5
 odrv_shoulder.odrv.config.dc_max_positive_current = 10
@@ -223,6 +213,9 @@ odrv_shoulder.odrv.rs485_encoder_group0.config.mode = Rs485EncoderMode.AMT21_POL
 odrv_shoulder.odrv.axis0.config.load_encoder = EncoderId.RS485_ENCODER0
 odrv_shoulder.odrv.axis0.config.commutation_encoder = EncoderId.RS485_ENCODER0
 
+
+# SAVE CONFIG -----------------------------------------------------------------------
+print("SAVING CONFIG...")
 odrv_shoulder.save_config()
 
 # Start the watchdog thread for DEBUG INFO ---------------------------------------------------------
@@ -230,19 +223,8 @@ watchdog_stop_event = threading.Event()
 watchdog_thread = threading.Thread(target=watchdog)
 watchdog_thread.start()
 
-# Calibration and save config -------------------------------------------------------------------------
-print("starting calibration...")
-
-# USING EREN'S CODE
-# odrv_lst = [odrv_shoulder]
-# is_calibrated = False
-# while not is_calibrated:
-#     ODrive_utils_arm.calibrate_motors(odrv_lst)  # us
-#     print(
-#     "Current state: "
-#     + str(AxisState(odrv_shoulder.axis0.current_state).name))
-#     dump_errors(odrv)
-
+# CALIBRATE -------------------------------------------------------------------------
+print("CALIBRATING...")
 odrv_shoulder.calibrate()
 
 # TODO - find a way to skip calibration if already calibrated
@@ -251,7 +233,6 @@ odrv_shoulder.calibrate()
 # TODO what is this for??
 # odrv.axis0.config.startup_encoder_offset_calibration = True
 # odrv.axis0.config.startup_closed_loop_control = True
-
 
 while True:
     try:

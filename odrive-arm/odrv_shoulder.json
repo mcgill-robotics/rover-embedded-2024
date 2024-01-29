@@ -1,0 +1,43 @@
+{
+    "odrv": {
+      "config": {
+        "dc_bus_overvoltage_trip_level": 30,
+        "dc_bus_undervoltage_trip_level": 10.5,
+        "dc_max_positive_current": 10,
+        "brake_resistor0": {
+          "enable": true,
+          "resistance": 2
+        },
+        "axis0": {
+          "motor": {
+            "motor_type": "HIGH_CURRENT",
+            "torque_constant": 0.06080882352941176,
+            "pole_pairs": 11,
+            "current_soft_max": 10,
+            "current_hard_max": 23,
+            "calibration_current": 2.5,
+            "resistance_calib_max_voltage": 2
+          },
+          "calibration_lockin": {
+            "current": 2.5
+          },
+          "controller": {
+            "input_mode": "PASSTHROUGH",
+            "control_mode": "POSITION_CONTROL"
+          },
+          "torque_soft_min": -0.12161764705882352,
+          "torque_soft_max": 0.12161764705882352,
+          "load_encoder": "RS485_ENCODER0",
+          "commutation_encoder": "RS485_ENCODER0"
+        },
+        "can": {
+          "protocol": "NONE"
+        },
+        "enable_uart_a": false,
+        "rs485_encoder_group0": {
+          "mode": "AMT21_POLLING"
+        }
+      }
+    }
+  }
+  
