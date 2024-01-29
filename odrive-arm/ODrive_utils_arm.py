@@ -1,6 +1,7 @@
-import rospy
+# import rospy
 import odrive
-from odrive.enums import AxisState, ProcedureResult 
+from odrive.enums import AxisState, ProcedureResult
+import time
 
 """
 Placeholders for now. In enumerate_motors(), these motors will be returned in this order. Serial numbers are also strings,
@@ -8,29 +9,69 @@ because ODrive API requires them to be that way. Note: correct serial numbers ar
 decimal. So before putting the numbers in here, you should first convert them to hex.
 """
 
-drive_serial_numbers = {"DRIVE_LB": "384E346E3539", "DRIVE_LF": "386134503539", "DRIVE_RB": "387134683539", "DRIVE_RF": "384F34683539"}
+drive_serial_numbers = {
+    "DRIVE_LB": "384E346E3539",
+    "DRIVE_LF": "386134503539",
+    "DRIVE_RB": "387134683539",
+    "DRIVE_RF": "384F34683539",
+}
 arm_serial_numbers = {"ARM_WAIST": "4", "ARM_TUMOR": "5", "ARM_ELBOW": "6"}
 
-drive_ids = {'384E346E3539': 'DRIVE_LB', '386134503539': 'DRIVE_LF', '387134683539': 'DRIVE_RB', '384F34683539': 'DRIVE_RF'}
-arm_ids = {'4': 'ARM_WAIST', '5': 'ARM_TUMOR', '6': 'ARM_ELBOW'}
+drive_ids = {
+    "384E346E3539": "DRIVE_LB",
+    "386134503539": "DRIVE_LF",
+    "387134683539": "DRIVE_RB",
+    "384F34683539": "DRIVE_RF",
+}
+arm_ids = {"4": "ARM_WAIST", "5": "ARM_TUMOR", "6": "ARM_ELBOW"}
 
 # Procedure codes are simple indices to this array
-procedure_codes = ["SUCCESS", "BUSY", "CANCELLED", "DISARMED", "NO_RESPONSE", "POLE_PAIR_CPR_MISMATCH",
-                   "PHASE_RESISTANCE_OUT_OF_RANGE", "PHASE_INDUCTANCE_OUT_OF_RANGE", "UNBALANCED_PHASES",
-                   "UNBALANCED_PHASES", "INVALID_MOTOR_TYPE", "ILLEGAL_HALL_STATE", "TIMEOUT", "HOMING_WITHOUT_ENDSTOP",
-                   "INVALID_STATE", "NOT_CALIBRATED", "NOT_CONVERGING"]
+procedure_codes = [
+    "SUCCESS",
+    "BUSY",
+    "CANCELLED",
+    "DISARMED",
+    "NO_RESPONSE",
+    "POLE_PAIR_CPR_MISMATCH",
+    "PHASE_RESISTANCE_OUT_OF_RANGE",
+    "PHASE_INDUCTANCE_OUT_OF_RANGE",
+    "UNBALANCED_PHASES",
+    "UNBALANCED_PHASES",
+    "INVALID_MOTOR_TYPE",
+    "ILLEGAL_HALL_STATE",
+    "TIMEOUT",
+    "HOMING_WITHOUT_ENDSTOP",
+    "INVALID_STATE",
+    "NOT_CALIBRATED",
+    "NOT_CONVERGING",
+]
 
 # Errors are bitwise encoded
-error_codes = {1: "INITIALIZING", 2: "SYSTEM_LEVEL", 4: "TIMING_ERROR",
-               8: "MISSING_ESTIMATE", 16: "BAD_CONFIG", 32: "DRV_FAULT",
-               64: "MISSING_INPUT", 256: "DC_BUS_OVER_VOLTAGE",
-               512: "DC_BUS_UNDER_VOLTAGE", 1024: "DC_BUS_OVER_CURRENT",
-               2048: "DC_BUS_OVER_REGEN_CURRENT", 4096: "CURRENT_LIMIT_VIOLATION",
-               8192: "MOTOR_OVER_TEMP", 16384: "INVERTER_OVER_TEMP",
-               32768: "VELOCITY_LIMIT_VIOLATION", 65536: "POSITION_LIMIT_VIOLATION",
-               16777216: "WATCHDOG_TIMER_EXPIRED", 33554432: "ESTOP_REQUESTED",
-               67108864: "SPINOUT_DETECTED", 134217728: "BRAKE_RESISTOR_DISARMED",
-               268435456: "THERMISTOR_DISCONNECTED", 1073741824: "CALIBRATION_ERROR"}
+error_codes = {
+    1: "INITIALIZING",
+    2: "SYSTEM_LEVEL",
+    4: "TIMING_ERROR",
+    8: "MISSING_ESTIMATE",
+    16: "BAD_CONFIG",
+    32: "DRV_FAULT",
+    64: "MISSING_INPUT",
+    256: "DC_BUS_OVER_VOLTAGE",
+    512: "DC_BUS_UNDER_VOLTAGE",
+    1024: "DC_BUS_OVER_CURRENT",
+    2048: "DC_BUS_OVER_REGEN_CURRENT",
+    4096: "CURRENT_LIMIT_VIOLATION",
+    8192: "MOTOR_OVER_TEMP",
+    16384: "INVERTER_OVER_TEMP",
+    32768: "VELOCITY_LIMIT_VIOLATION",
+    65536: "POSITION_LIMIT_VIOLATION",
+    16777216: "WATCHDOG_TIMER_EXPIRED",
+    33554432: "ESTOP_REQUESTED",
+    67108864: "SPINOUT_DETECTED",
+    134217728: "BRAKE_RESISTOR_DISARMED",
+    268435456: "THERMISTOR_DISCONNECTED",
+    1073741824: "CALIBRATION_ERROR",
+}
+
 
 def decode_errors(n):
     """
@@ -47,10 +88,11 @@ def decode_errors(n):
     for i in range(num_bits):
         mask = 1 << i
         if n & mask:
-            errors_string += (error_codes[mask] + ", ")
+            errors_string += error_codes[mask] + ", "
 
     # Strip the last two characters (", ") before returning the error string
     return errors_string[:-2]
+
 
 def enumerate_motors(search_timeout=5):
     """
@@ -58,7 +100,7 @@ def enumerate_motors(search_timeout=5):
     motor for search_timeout seconds, after which it returns an empty dict signifying an error. This error should
     be caught and handled downstream in the main ODrive node. On success, it returns a dict where keys are the
     motor names and values are the corresponding ODrive objects.
-    
+
     :param search_timeout: Timeout for a single motor search. Keep in mind that the search is blocking. Default is 5 seconds.
     :returns: Dict{"LB_MOTOR": ODrive, "LF_MOTOR": ODrive...}
     """
@@ -78,7 +120,7 @@ def enumerate_motors(search_timeout=5):
         else:
             print(f"Motor {key} not found. Motor enumeration failed!")
             return {}
-    
+
     return found_motors
 
 
@@ -93,66 +135,91 @@ def calibrate_motors(motor_array):
     # Ask the devices to calibrate if it isn't calibrating already, and wait for a short time for them to respond
     print("Calibrating encoders...")
     for odrv in motor_array:
-        if odrv.axis0.current_state != AxisState.ENCODER_OFFSET_CALIBRATION:
-            odrv.axis0.requested_state = AxisState.ENCODER_OFFSET_CALIBRATION
-    rospy.sleep(0.02)
+        # if odrv.axis0.current_state != AxisState.ENCODER_OFFSET_CALIBRATION:
+        #     odrv.axis0.requested_state = AxisState.ENCODER_OFFSET_CALIBRATION
+        if odrv.axis0.current_state != AxisState.FULL_CALIBRATION_SEQUENCE:
+            odrv.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
+    # rospy.sleep(0.02)
+    time.sleep(0.02)
 
     # Verify that the devices are in calibration mode. If the calibration fails for one motor, abort the calibration
     for odrv in motor_array:
         if odrv.axis0.current_state != AxisState.ENCODER_OFFSET_CALIBRATION:
-            print("Motor {} could not enter calibration mode, calibration aborted. Error(s) occurred: {}".format(odrv.serial_number, decode_errors(odrv.axis0.active_errors)))
+        # if odrv.axis0.current_state != AxisState.FULL_CALIBRATION_SEQUENCE:
+            print(
+                "Motor {} could not enter calibration mode, calibration aborted. Error(s) occurred: {}".format(
+                    odrv.serial_number, decode_errors(odrv.axis0.active_errors)
+                )
+            )
             for odrv in motor_array:
                 odrv.axis0.requested_state = AxisState.IDLE
             break
-    
+
     # Wait until calibration is done, abort on failure
     all_done = False
     errors_encountered = False
-    while not all_done and not rospy.is_shutdown():
+    # while not all_done and not rospy.is_shutdown():
+    while not all_done:
         all_done = True
 
         for odrv in motor_array:
             # Check if the motor is still calibrating
-            if odrv.axis0.current_state == AxisState.ENCODER_OFFSET_CALIBRATION:
+            # if odrv.axis0.current_state == AxisState.ENCODER_OFFSET_CALIBRATION:
+            if (
+                odrv.axis0.current_state == AxisState.MOTOR_CALIBRATION
+                or odrv.axis0.current_state == AxisState.FULL_CALIBRATION_SEQUENCE
+            ):
                 all_done = False
 
             # Record errors and abort calibration if there are errors
             if odrv.axis0.active_errors != 0:
-                print("Error(s) occurred with motor {} during calibration: {}".format(odrv.serial_number, decode_errors(odrv.axis0.active_errors)))
+                print(
+                    "Error(s) occurred with motor {} during calibration: {}".format(
+                        odrv.serial_number, decode_errors(odrv.axis0.active_errors)
+                    )
+                )
                 errors_encountered = True
                 for odrv in motor_array:
                     odrv.axis0.requested_state = AxisState.IDLE
+                odrv.clear_errors()  # mn297 fix
                 break
-        
-        rospy.sleep(0.1)
-    
+
+        # rospy.sleep(0.1)
+        time.sleep(0.1)
+
     if all_done and not errors_encountered:
         print("Calibration successful for all motors.")
     elif all_done and errors_encountered:
         print("Errors occurred during calibration routine, calibration aborted.")
         return False
     elif not all_done:
-        print("Calibration routine was interrupted by shutdown signal. Calibration aborted.")
+        print(
+            "Calibration routine was interrupted by shutdown signal. Calibration aborted."
+        )
         for odrv in motor_array:
             odrv.axis0.requested_state = AxisState.IDLE
         return False
-    
+
     # Errors didn't happen during calibration time, but this doesn't mean that calibration was successful.
     # Wait for the actual procedure result to be available from all devices
     results_available = False
-    while not results_available and not rospy.is_shutdown():
+    # while not results_available and not rospy.is_shutdown():
+    while not results_available:
         results_available = True
         for odrv in motor_array:
             if odrv.axis0.procedure_result == ProcedureResult.BUSY:
                 results_available = False
-        rospy.sleep(0.1)
-    
+        # rospy.sleep(0.1)
+        time.sleep(0.1)
+
     if not results_available:
-        print("Calibration routine was interrupted by shutdown signal. Calibration aborted.")
+        print(
+            "Calibration routine was interrupted by shutdown signal. Calibration aborted."
+        )
         for odrv in motor_array:
             odrv.axis0.requested_state = AxisState.IDLE
         return False
-    
+
     # Now examine each motor for calibration errors and disarm conditions
     calibration_failed = False
     for odrv in motor_array:
@@ -161,18 +228,30 @@ def calibrate_motors(motor_array):
         if result != ProcedureResult.SUCCESS:
             calibration_failed = True
             if errors != 0:
-                print("Motor error(s) in motor {}: {}".format(odrv.serial_number, decode_errors(errors)))
-            print("Calibration procedure failed in motor {}. Reason: {}".format(odrv.serial_number, procedure_codes[result]))
+                print(
+                    "Motor error(s) in motor {}: {}".format(
+                        odrv.serial_number, decode_errors(errors)
+                    )
+                )
+            print(
+                "Calibration procedure failed in motor {}. Reason: {}".format(
+                    odrv.serial_number, procedure_codes[result]
+                )
+            )
             if result == ProcedureResult.DISARMED:
-                print("Motor {} disarmed. Reason: {}".format(odrv.serial_number, decode_errors(odrv.axis0.disarm_reason)))
+                print(
+                    "Motor {} disarmed. Reason: {}".format(
+                        odrv.serial_number, decode_errors(odrv.axis0.disarm_reason)
+                    )
+                )
             for odrv in motor_array:
                 odrv.axis0.requested_state = AxisState.IDLE
             break
-    
+
     if calibration_failed:
         print("Calibration failed for some motors. Calibration aborted.")
         return False
-    
+
     # If everything went well so far, request closed loop control state from each device, and wait until it happens
     for odrv in motor_array:
         odrv.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
@@ -180,7 +259,8 @@ def calibrate_motors(motor_array):
     # Make sure that all motors went to closed loop control mode
     close_loop_achieved = False
     errors_occurred = False
-    while not close_loop_achieved and not rospy.is_shutdown():
+    # while not close_loop_achieved and not rospy.is_shutdown():
+    while not close_loop_achieved:
         close_loop_achieved = True
         for odrv in motor_array:
             if odrv.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL:
@@ -191,9 +271,11 @@ def calibrate_motors(motor_array):
                 for odrv in motor_array:
                     odrv.axis0.requested_state = AxisState.IDLE
                 break
-    
+
     if errors_occurred:
-        print("Error(s) occurred while trying to activate closed loop control. Aborting initialization.")
+        print(
+            "Error(s) occurred while trying to activate closed loop control. Aborting initialization."
+        )
         return False
 
     # Everything went well, every motor is now ready for commands.
