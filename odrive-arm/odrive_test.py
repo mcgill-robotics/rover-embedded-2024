@@ -1,9 +1,3 @@
-# from odrive_interface.msg import MotorError, MotorState
-# import odrive
-# from odrive.enums import AxisState, ProcedureResult
-# odrive_serial = "386434413539"
-# found_motor = odrive.find_any(serial_number=odrive_serial, timeout=5)
-
 from __future__ import print_function
 
 import odrive
@@ -12,13 +6,10 @@ import odrive.enums
 import odrive.utils
 import odrive.config
 
-# from odrive.enums import AxisState, ProcedureResult, AxisError, ControlMode, EncoderId, InputMode, MotorType
 from odrive.enums import *
 from odrive.utils import dump_errors
 
-import ODrive_utils_arm
 import time
-import math
 import threading
 import fibre
 
@@ -34,10 +25,6 @@ def watchdog():
     i = 0
 
     while not watchdog_stop_event.is_set():
-        # i += 1
-        # if (odrv_shoulder.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL or odrv_shoulder.axis0.current_state != AxisState.MOTOR_CALIBRATION or odrv_shoulder.axis0.current_state != AxisState.ENCODER_OFFSET_CALIBRATION):
-        #     odrv_shoulder.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
-
         try:
             print(
                 "Current state: "
@@ -54,9 +41,7 @@ def watchdog():
                 # + ", velocity"
                 # + str(odrv_shoulder.axis0.controller.velocity)
             )
-            time.sleep(
-                1
-            )  # Set the period for the watchdog prints (0.2 seconds in this example)
+            time.sleep(1)
         except NameError:
             pass
 
@@ -64,7 +49,7 @@ def watchdog():
 class ODrive_Joint:
     def __init__(self, odrv):
         self.odrv = odrv
-        # odrv.serial_number is int, serial_number is str of hex version
+        # odrv.serial_number is int, serial_number should be hex version in string
         self.serial_number = str(hex(self.odrv.serial_number)[2:])
         self.timeout = 5
 
@@ -170,13 +155,12 @@ class ODrive_Joint:
             )
         )
 
-        def print_gpio_voltages(self):
-            for i in [1, 2, 3, 4]:
-                print(
-                    "voltage on GPIO{} is {} Volt".format(
-                        i, self.odrv.get_adc_voltage(i)
-                    )
-                )
+    # Print the voltage on the GPIO pins
+    def print_gpio_voltages(self):
+        for i in [1, 2, 3, 4]:
+            print(
+                "voltage on GPIO{} is {} Volt".format(i, self.odrv.get_adc_voltage(i))
+            )
 
 
 # CONNECT TO ODRIVE ------------------------------------------------------------------
@@ -218,7 +202,7 @@ odrv_shoulder.odrv.axis0.config.commutation_encoder = EncoderId.RS485_ENCODER0
 print("SAVING CONFIG...")
 odrv_shoulder.save_config()
 
-# Start the watchdog thread for DEBUG INFO ---------------------------------------------------------
+# START WATCHDOG THREAD FOR DEBUG INFO ---------------------------------------------------------
 watchdog_stop_event = threading.Event()
 watchdog_thread = threading.Thread(target=watchdog)
 watchdog_thread.start()
@@ -227,13 +211,14 @@ watchdog_thread.start()
 print("CALIBRATING...")
 odrv_shoulder.calibrate()
 
-# TODO - find a way to skip calibration if already calibrated
+# TODO  - Find a way to skip calibration if already calibrated
+#       - Play with the settings below maybe?
+#       - Add settings to calibrate or not
 # odrv.axis0.config.motor.pre_calibrated = True
-
-# TODO what is this for??
 # odrv.axis0.config.startup_encoder_offset_calibration = True
 # odrv.axis0.config.startup_closed_loop_control = True
 
+# PROMPT FOR SETPOINT ----------------------------------------------------------------
 while True:
     try:
         setpoint = float(
