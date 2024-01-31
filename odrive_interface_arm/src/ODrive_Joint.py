@@ -12,6 +12,7 @@ from odrive.utils import dump_errors
 import time
 import threading
 import fibre
+import re
 
 
 def watchdog(ODrive_Joint_lst, watchdog_stop_event):
@@ -190,30 +191,26 @@ class ODrive_Joint:
             )
 
 
-# TODO find more serial, it is a string of hex of the serial number
-arm_serial_numbers = {
-    "rover_arm_shoulder": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
-    "rover_arm_elbow": "0",
-    "rover_arm_waist": "0",
-}
-
-
-# SAMPLE USAGE
+# SAMPLE USAGE FOR REFERENCE
 def main():
+    # TODO find more serial, it is a string of hex of the serial number
+    arm_serial_numbers = {
+        "rover_arm_shoulder": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
+        "rover_arm_elbow": "0",
+        "rover_arm_waist": "0",
+    }
+
     # Set to True if you want to reapply the config, False if you want to skip it
     reapply_config = False
 
     # True by default, set to False if you don't want to calibrate
     do_calibration = True
 
-    # CONNECT TO ODRIVE ------------------------------------------------------------------
-    print("FINDING ODrive...")
     odrv_shoulder = ODrive_Joint(
         odrive.find_any(
             serial_number=arm_serial_numbers["rover_arm_shoulder"], timeout=5
         )
     )
-    odrv_shoulder.gear_ratio = 3
 
     # ERASE CONFIG -----------------------------------------------------------------------
     if reapply_config:
@@ -271,6 +268,13 @@ def main():
     # SET ABSOLUTE POSITION ----------------------------------------------------------------
     odrv_shoulder.odrv.axis0.set_abs_pos(6.9)
 
+    # TODO investigate more, this is not working
+    # odrv_shoulder.odrv.axis0.pos_vel_mapper.config.offset = 5.5
+    # odrv_shoulder.odrv.axis0.pos_vel_mapper.config.offset_valid = True
+    # odrv_shoulder.odrv.axis0.pos_vel_mapper.config.approx_init_pos = 0
+    # odrv_shoulder.odrv.axis0.pos_vel_mapper.config.approx_init_pos_valid = True
+    # odrv_shoulder.odrv.axis0.controller.config.absolute_setpoints = True
+
     # START WATCHDOG THREAD FOR DEBUG INFO ---------------------------------------------------------
     ODrive_Joint_lst = [odrv_shoulder]
     watchdog_stop_event = threading.Event()
@@ -280,23 +284,73 @@ def main():
     watchdog_thread.start()
 
     # PROMPT FOR SETPOINT (INCREMENTAL) ----------------------------------------------------------------
+    # while True:
+    #     try:
+    #         # Convert the input to float for position control
+    #         setpoint_increment = float(input("Enter setpoint_increment (rev): "))
+    #     except ValueError:
+    #         print("Invalid input. Please enter a numeric value.")
+    #         # Skip the rest of the loop and prompt for input again
+    #         continue
+    #     setpoint = odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel + (
+    #         setpoint_increment * odrv_shoulder.gear_ratio
+    #     )
+    #     print(
+    #         f"INCREMENTING {setpoint_increment} to {setpoint}, currently at {odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel}, state {odrv_shoulder.odrv.axis0.current_state}"
+    #     )
+    #     # Apply the setpoint
+    #     odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
+    #     dump_errors(odrv_shoulder.odrv)
+    #     time.sleep(0.01)
+
+    # PROMPT FOR SETPOINT (INCREMENTAL AND ABSOLUTE) -----------------------------------------------------
     while True:
         try:
-            # Convert the input to float for position control
-            setpoint_increment = float(input("Enter setpoint_increment (rev): "))
-        except ValueError:
-            print("Invalid input. Please enter a numeric value.")
+            user_input = input("Enter command (increment 'i X' or absolute 'a X'): ")
+            # Using regular expression to parse the input
+            match = re.match(r"([ia])\s*(-?\d+(\.\d+)?)", user_input)
+            if not match:
+                raise ValueError(
+                    "Invalid format. Use 'i X' for increment or 'a X' for absolute."
+                )
+
+            command, value_str = match.groups()[:2]
+            value = float(value_str)
+
+            # Increment command
+            if command == "i":  # Incremental command
+                setpoint_increment = value
+                setpoint = odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel + (
+                    setpoint_increment * odrv_shoulder.gear_ratio
+                )
+                print(
+                    f"INCREMENTING {setpoint_increment}, setpoint={setpoint}, pos_rel={odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel}, current_state={odrv_shoulder.odrv.axis0.current_state}"
+                )
+                odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
+
+            # Setpoint command
+            elif command == "s":
+                setpoint = value
+                print(
+                    f"SETTING SETPOINT to {setpoint}, current_state={odrv_shoulder.odrv.axis0.current_state}"
+                )
+                odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
+
+            # Absolute command
+            elif command == "a":
+                print(
+                    f"SETTING ABSOLUTE POSITION to {value}, current_state={odrv_shoulder.odrv.axis0.current_state}"
+                )
+                odrv_shoulder.odrv.axis0.set_abs_pos(value)
+
+            # Apply the setpoint
+            dump_errors(odrv_shoulder.odrv)
+
+        except ValueError as e:
+            print(e)
             # Skip the rest of the loop and prompt for input again
             continue
-        setpoint = odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel + (
-            setpoint_increment * odrv_shoulder.gear_ratio
-        )
-        print(
-            f"incrementing {setpoint_increment} to {setpoint}, currently at {odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel}, state {odrv_shoulder.odrv.axis0.current_state}"
-        )
-        # Apply the setpoint
-        odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
-        dump_errors(odrv_shoulder.odrv)
+
         time.sleep(0.01)
 
     # PROMPT FOR SETPOINT ----------------------------------------------------------------

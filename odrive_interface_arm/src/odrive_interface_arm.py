@@ -10,34 +10,34 @@ from odrive.enums import AxisState, ProcedureResult
 from odrive.utils import dump_errors
 from std_msgs.msg import Float32MultiArray
 from ODrive_utils import *
+from ODrive_Joint import *
 
+
+# TODO find more serial, it is a string of hex of the serial number
+arm_serial_numbers = {
+    "rover_arm_shoulder": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
+    "rover_arm_elbow": "0",
+    "rover_arm_waist": "0",
+}
 
 
 # TODO: Once drive is working well, expand this node to include the three arm motors
-class Node_odrive_arm_interface:
+class Node_odrive_interface_arm:
     def __init__(self):
-        self.drive_lb = None
-        self.drive_rb = None
-        self.lb_speed_cmd = 0.0
-        self.rb_speed_cmd = 0.0
-        self.lf_speed_cmd = 0.0
-        self.rf_speed_cmd = 0.0
+        # Feedback publishers
+        self.elbow_pos_outshaft = 0.0
+        self.shoulder_pos_outshaft = 0.0
+        self.waist_pos_outshaft = 0.0
 
-        self.active_errors = {
-            "DRIVE_LB": 0,
-            "DRIVE_LF": 0,
-            "DRIVE_RB": 0,
-            "DRIVE_RF": 0,
-        }
-
+        # Setpoints for the arm motors
         self.elbow_pos_setpoint = 0.0
         self.shoulder_pos_setpoint = 0.0
         self.waist_pos_setpoint = 0.0
 
         # Subscriptions
         rospy.init_node("odrive_interface")
-        self.feedback_publisher = rospy.Publisher(
-            "/arm_lower_feedback", Float32MultiArray, queue_size=1
+        self.position_subscriber = rospy.Subscriber(
+            "/arm_lower_output_shaft_position", Float32MultiArray, self.handle_arm_position_fb
         )
         self.command_subscriber = rospy.Subscriber(
             "/arm_lower_command", Float32MultiArray, self.handle_arm_command
@@ -47,6 +47,13 @@ class Node_odrive_arm_interface:
         self.rate = rospy.Rate(100)
         self.run()
 
+    # From external encoders
+    def handle_arm_position_fb(self, command):
+        self.elbow_pos_outshaft = command.data[0]
+        self.shoulder_pos_outshaft = command.data[1]
+        self.waist_pos_outshaft = command.data[2]
+
+    # From the external control node
     def handle_arm_command(self, command):
         self.elbow_pos_setpoint = command.data[0]
         self.shoulder_pos_setpoint = command.data[1]
@@ -54,26 +61,20 @@ class Node_odrive_arm_interface:
 
     def run(self):
         # Discover motors on startup and assign variables for each
-        motors_dict = enumerate_motors()
-        if not motors_dict:
-            raise IOError("Motor enumeration failed")
+        # TODO Elbow and waist motors
+        odrv_shoulder = ODrive_Joint(
+            odrive.find_any(
+                serial_number=arm_serial_numbers["rover_arm_shoulder"], timeout=5
+            )
+        )
 
-        drive_lb = motors_dict["DRIVE_LB"]
-        drive_lf = motors_dict["DRIVE_LF"]
-        drive_rb = motors_dict["DRIVE_RB"]
-        drive_rf = motors_dict["DRIVE_RF"]
-        drive_motors = [drive_lb, drive_lf, drive_rb, drive_rf]
-
-        # Calibrate all motors
-        if not calibrate_motors(drive_motors):
-            raise IOError("Motor initialization failed")
-
+        # MAIN LOOP
         while not rospy.is_shutdown():
-            # Put in speed command
-            drive_lb.axis0.controller.input_vel = -self.lb_speed_cmd
-            drive_lf.axis0.controller.input_vel = -self.lf_speed_cmd
-            drive_rb.axis0.controller.input_vel = self.rb_speed_cmd
-            drive_rf.axis0.controller.input_vel = self.rf_speed_cmd
+            # Apply setpoint
+            # TODO Elbow and waist motors
+            shoulder_pos_error = self.shoulder_pos_setpoint - self.shoulder_pos_fb
+            odrv_shoulder.odrv.axis0.controller.input_pos = self.shoulder_pos_setpoint
+
 
             # Get feedback and publish it to "/wheel_velocity_feedback"
             feedback = WheelSpeed()
@@ -171,5 +172,5 @@ class Node_odrive_arm_interface:
 
 
 if __name__ == "__main__":
-    driver = Node_odrive_arm_interface()
+    driver = Node_odrive_interface_arm()
     rospy.spin()
