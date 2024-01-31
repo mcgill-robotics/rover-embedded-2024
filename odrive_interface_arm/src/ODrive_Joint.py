@@ -13,19 +13,6 @@ import time
 import threading
 import fibre
 
-# TODO find more serial, it is a string of hex of the serial number
-arm_serial_numbers = {
-    "rover_arm_shoulder": "386434413539",
-    "rover_arm_elbow": "0",
-    "rover_arm_waist": "0",
-}
-
-# Set to True if you want to reapply the config, False if you want to skip it
-reapply_config = False
-
-# True by default, set to False if you don't want to calibrate
-do_calibration = True
-
 
 def watchdog(ODrive_Joint_lst, watchdog_stop_event):
     while not watchdog_stop_event.is_set():
@@ -203,8 +190,22 @@ class ODrive_Joint:
             )
 
 
+# TODO find more serial, it is a string of hex of the serial number
+arm_serial_numbers = {
+    "rover_arm_shoulder": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
+    "rover_arm_elbow": "0",
+    "rover_arm_waist": "0",
+}
+
+
 # SAMPLE USAGE
 def main():
+    # Set to True if you want to reapply the config, False if you want to skip it
+    reapply_config = False
+
+    # True by default, set to False if you don't want to calibrate
+    do_calibration = True
+
     # CONNECT TO ODRIVE ------------------------------------------------------------------
     print("FINDING ODrive...")
     odrv_shoulder = ODrive_Joint(
@@ -269,7 +270,6 @@ def main():
 
     # SET ABSOLUTE POSITION ----------------------------------------------------------------
     odrv_shoulder.odrv.axis0.set_abs_pos(6.9)
-    # odrv_shoulder.odrv.encoder_estimator0.pos_estimate = 6.9
 
     # START WATCHDOG THREAD FOR DEBUG INFO ---------------------------------------------------------
     ODrive_Joint_lst = [odrv_shoulder]
@@ -282,21 +282,19 @@ def main():
     # PROMPT FOR SETPOINT (INCREMENTAL) ----------------------------------------------------------------
     while True:
         try:
-            setpoint_increment = float(
-                input("Enter setpoint_increment (rev): ")
-            )  # Convert the input to float for position control
+            # Convert the input to float for position control
+            setpoint_increment = float(input("Enter setpoint_increment (rev): "))
         except ValueError:
             print("Invalid input. Please enter a numeric value.")
-            continue  # Skip the rest of the loop and prompt for input again
+            # Skip the rest of the loop and prompt for input again
+            continue
         setpoint = odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel + (
             setpoint_increment * odrv_shoulder.gear_ratio
         )
         print(
-            f"goto {float(setpoint)}, currently at {odrv_shoulder.odrv.rs485_encoder_group0.raw}, state {odrv_shoulder.odrv.axis0.current_state}"
+            f"incrementing {setpoint_increment} to {setpoint}, currently at {odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel}, state {odrv_shoulder.odrv.axis0.current_state}"
         )
-        print(
-            f"increment {setpoint_increment}, currently at {odrv_shoulder.odrv.rs485_encoder_group0.raw}, state {odrv_shoulder.odrv.axis0.current_state}"
-        )
+        # Apply the setpoint
         odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
         dump_errors(odrv_shoulder.odrv)
         time.sleep(0.01)
