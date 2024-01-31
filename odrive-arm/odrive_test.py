@@ -20,29 +20,43 @@ arm_serial_numbers = {
     "rover_arm_waist": "0",
 }
 
+# Set to True if you want to reapply the config, False if you want to skip it
+reapply_config = False
+
+# True by default, set to False if you don't want to calibrate
+do_calibration = True
+
 
 def watchdog():
-    i = 0
-
     while not watchdog_stop_event.is_set():
         try:
             print(
-                "Current state: "
+                "current_state="
                 + str(AxisState(odrv_shoulder.odrv.axis0.current_state).name)
                 + ", "
-                + "Raw angle: "
+                + "Raw angle="
                 + str(odrv_shoulder.odrv.rs485_encoder_group0.raw)
                 + ", "
-                + "Current pos: "
+                + "pos_rel="
                 + str(odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel)
+                + ", "
+                + "pos_abs="
+                + str(odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_abs)
                 + ", "
                 + "input_pos="
                 + str(odrv_shoulder.odrv.axis0.controller.input_pos)
-                # + ", velocity"
-                # + str(odrv_shoulder.axis0.controller.velocity)
+                + ", "
+                + "vel_estimate="
+                + str(odrv_shoulder.odrv.encoder_estimator0.vel_estimate)
             )
             time.sleep(1)
         except NameError:
+            pass
+        except fibre.libfibre.ObjectLostError:
+            print(" lost connection in watchdog() ...")
+            odrv_shoulder.reconnect()
+            if odrv_shoulder.odrv:
+                print("  re-connected in watchdog()")
             pass
 
 
@@ -52,6 +66,8 @@ class ODrive_Joint:
         # odrv.serial_number is int, serial_number should be hex version in string
         self.serial_number = str(hex(self.odrv.serial_number)[2:])
         self.timeout = 5
+        # gear_ratio is input revolutions / output revolutions
+        self.gear_ratio = 1
 
     def save_config(self):
         try:
@@ -79,6 +95,20 @@ class ODrive_Joint:
             )
             if self.odrv:
                 print("  re-connected in erase_config()")
+            pass
+
+    def reconnect(self):
+        try:
+            self.odrv = odrive.find_any(
+                serial_number=self.serial_number, timeout=self.timeout
+            )
+        except fibre.libfibre.ObjectLostError:
+            print(" lost connection in reconnect() ...")
+            self.odrv = odrive.find_any(
+                serial_number=self.serial_number, timeout=self.timeout
+            )
+            if self.odrv:
+                print("  re-connected in reconnect()")
             pass
 
     def calibrate(self):
@@ -139,19 +169,24 @@ class ODrive_Joint:
         else:
             print("Calibration successful!")
 
-        # ENTER CLOSED LOOP CONTROL
+    def enter_closed_loop_control(self):
         self.odrv.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
-        while self.odrv.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL:
-            time.sleep(1)
+        while (
+            self.odrv.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL
+            or self.odrv.axis0.current_state == AxisState.IDLE
+        ):
+            time.sleep(0.5)
             print(
                 "Motor {} is still entering closed loop control. Current state: {}".format(
                     self.odrv.serial_number,
                     AxisState(self.odrv.axis0.current_state).name,
                 )
             )
+            dump_errors(self.odrv)
         print(
-            "SUCCESS: Motor {} is in closed loop control.".format(
-                self.odrv.serial_number
+            "SUCCESS: Motor {} is in state: {}.".format(
+                self.odrv.serial_number,
+                AxisState(self.odrv.axis0.current_state).name,
             )
         )
 
@@ -168,10 +203,12 @@ print("FINDING ODrive...")
 odrv_shoulder = ODrive_Joint(
     odrive.find_any(serial_number=arm_serial_numbers["rover_arm_shoulder"], timeout=5)
 )
+odrv_shoulder.gear_ratio = 3
 
 # ERASE CONFIG -----------------------------------------------------------------------
-print("ERASING CONFIG...")
-odrv_shoulder.erase_config()
+if reapply_config:
+    print("ERASING CONFIG...")
+    odrv_shoulder.erase_config()
 
 # APPLY CONFIG -----------------------------------------------------------------------
 odrv_shoulder.odrv.config.dc_bus_overvoltage_trip_level = 30
@@ -199,41 +236,76 @@ odrv_shoulder.odrv.axis0.config.commutation_encoder = EncoderId.RS485_ENCODER0
 
 
 # SAVE CONFIG -----------------------------------------------------------------------
-print("SAVING CONFIG...")
-odrv_shoulder.save_config()
+if reapply_config:
+    print("SAVING CONFIG...")
+    odrv_shoulder.save_config()
+
+
+# CALIBRATE -------------------------------------------------------------------------
+if do_calibration:
+    print("CALIBRATING...")
+    odrv_shoulder.calibrate()
+
+# ENTER CLOSED LOOP CONTROL ---------------------------------------------------------
+print("ENTERING CLOSED LOOP CONTROL...")
+odrv_shoulder.enter_closed_loop_control()
+
+# SAVE CALIBRATION -----------------------------------------------------------------
+if reapply_config:
+    # odrv_shoulder.odrv.axis0.motor.config.pre_calibrated = True
+    odrv_shoulder.odrv.axis0.config.startup_motor_calibration = True
+    odrv_shoulder.odrv.axis0.config.startup_encoder_offset_calibration = True
+    odrv_shoulder.odrv.axis0.config.startup_closed_loop_control = True
+    odrv_shoulder.save_config()
+
+# SET ABSOLUTE POSITION ----------------------------------------------------------------
+odrv_shoulder.odrv.axis0.set_abs_pos(6.9)
+# odrv_shoulder.odrv.encoder_estimator0.pos_estimate = 6.9
 
 # START WATCHDOG THREAD FOR DEBUG INFO ---------------------------------------------------------
 watchdog_stop_event = threading.Event()
 watchdog_thread = threading.Thread(target=watchdog)
 watchdog_thread.start()
 
-# CALIBRATE -------------------------------------------------------------------------
-print("CALIBRATING...")
-odrv_shoulder.calibrate()
-
-# TODO  - Find a way to skip calibration if already calibrated
-#       - Play with the settings below maybe?
-#       - Add settings to calibrate or not
-# odrv.axis0.config.motor.pre_calibrated = True
-# odrv.axis0.config.startup_encoder_offset_calibration = True
-# odrv.axis0.config.startup_closed_loop_control = True
-
-# PROMPT FOR SETPOINT ----------------------------------------------------------------
+# PROMPT FOR SETPOINT (INCREMENTAL) ----------------------------------------------------------------
 while True:
     try:
-        setpoint = float(
-            input("Enter setpoint: ")
+        setpoint_increment = float(
+            input("Enter setpoint_increment (rev): ")
         )  # Convert the input to float for position control
     except ValueError:
         print("Invalid input. Please enter a numeric value.")
         continue  # Skip the rest of the loop and prompt for input again
-
+    setpoint = odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel + (
+        setpoint_increment * odrv_shoulder.gear_ratio
+    )
     print(
-        f"goto {int(setpoint)}, currently at {odrv_shoulder.odrv.rs485_encoder_group0.raw}, state {odrv_shoulder.odrv.axis0.current_state}"
+        f"goto {float(setpoint)}, currently at {odrv_shoulder.odrv.rs485_encoder_group0.raw}, state {odrv_shoulder.odrv.axis0.current_state}"
+    )
+    print(
+        f"increment {setpoint_increment}, currently at {odrv_shoulder.odrv.rs485_encoder_group0.raw}, state {odrv_shoulder.odrv.axis0.current_state}"
     )
     odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
     dump_errors(odrv_shoulder.odrv)
     time.sleep(0.01)
+
+# PROMPT FOR SETPOINT ----------------------------------------------------------------
+# while True:
+#     try:
+#         setpoint = float(
+#             input("Enter setpoint: ")
+#         )  # Convert the input to float for position control
+#     except ValueError:
+#         print("Invalid input. Please enter a numeric value.")
+#         continue  # Skip the rest of the loop and prompt for input again
+
+#     print(
+#         f"goto {int(setpoint)}, currently at {odrv_shoulder.odrv.rs485_encoder_group0.raw}, state {odrv_shoulder.odrv.axis0.current_state}"
+#     )
+#     odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
+#     dump_errors(odrv_shoulder.odrv)
+#     time.sleep(0.01)
+
 
 # Stop watchdog thread, when closing the script -------------------------------------------------
 watchdog_stop_event.set()
