@@ -1,7 +1,5 @@
 import os, sys
-
-currentdir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(currentdir)
+from enum import Enum
 
 # TODO: Figure out why catkin on the Jetson isn't playing nice with this import. It worked on my PC -Eren
 # import init_functions
@@ -13,14 +11,25 @@ from ODrive_utils import *
 from ODrive_Joint import *
 from msg import MotorState, MotorError
 
+currentdir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(currentdir)
 
+
+class FeedbackMode(Enum):
+    FROM_ODRIVE = "fb_from_odrive"
+    FROM_OUTSHAFT = "fb_from_outshaft"
+
+
+# CONFIGURATION
 # TODO find more serial, it is a string of hex of the serial number
 arm_serial_numbers = {
     "rover_arm_shoulder": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
     "rover_arm_elbow": "0",
     "rover_arm_waist": "0",
 }
+current_mode = FeedbackMode.FROM_ODRIVE
 
+# VARIABLES
 arm_joint_lst = []
 
 
@@ -52,6 +61,7 @@ class Node_odrive_interface_arm:
         self.state_publisher = rospy.Publisher(
             "/odrive_arm_state", MotorState, queue_size=1
         )
+        # Could be from the ODrive or from the outshaft, depending on configuration
         self.feedback_publisher = rospy.Publisher(
             "/armBrushlessFB",  # Change this to your desired topic name
             Float32MultiArray,
@@ -67,7 +77,8 @@ class Node_odrive_interface_arm:
         self.elbow_pos_outshaft = msg.data[0]
         self.shoulder_pos_outshaft = msg.data[1]
         self.waist_pos_outshaft = msg.data[2]
-        self.feedback_publisher.publish(msg)
+        if current_mode == FeedbackMode.FROM_OUTSHAFT:
+            self.feedback_publisher.publish(msg)
 
     # Receive setpoint from external control node
     def handle_arm_command(self, msg):
@@ -98,6 +109,14 @@ class Node_odrive_interface_arm:
             # feedback.right[0], feedback.right[1] = measured_speed_rb, measured_speed_rf
             # self.feedback_publisher.publish(feedback)
 
+            if current_mode == FeedbackMode.FROM_ODRIVE:
+                # Publish feedback from ODrive
+                feedback = Float32MultiArray()
+                feedback.data = [
+                    odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel,
+                    odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_abs,
+                ]
+                self.feedback_publisher.publish(feedback)
             # APPLY SETPOINT
             # TODO Elbow and waist motors
             shoulder_pos_error = self.shoulder_pos_setpoint - self.shoulder_pos_outshaft
