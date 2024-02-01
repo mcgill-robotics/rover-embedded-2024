@@ -14,6 +14,20 @@ import threading
 import fibre
 import re
 
+try:
+    import rospy
+
+    ROS_ENABLED = True
+except ImportError:
+    ROS_ENABLED = False
+
+
+def custom_sleep(duration):
+    if ROS_ENABLED:
+        rospy.sleep(duration)
+    else:
+        time.sleep(duration)
+
 
 def watchdog(ODrive_Joint_lst, watchdog_stop_event):
     while not watchdog_stop_event.is_set():
@@ -38,7 +52,7 @@ def watchdog(ODrive_Joint_lst, watchdog_stop_event):
                     + "vel_estimate="
                     + str(joint.odrv.encoder_estimator0.vel_estimate)
                 )
-            time.sleep(1)
+            custom_sleep(1)
         except NameError:
             pass
         except fibre.libfibre.ObjectLostError:
@@ -66,7 +80,7 @@ class ODrive_Joint:
         try:
             self.odrv.save_configuration()
             while self.odrv.axis0.procedure_result != ProcedureResult.SUCCESS:
-                time.sleep(0.5)
+                custom_sleep(0.5)
         # Saving configuration makes the ODrive reboot
         except fibre.libfibre.ObjectLostError:
             print(" lost connection in save_config() ...")
@@ -108,7 +122,7 @@ class ODrive_Joint:
         self.odrv.clear_errors()
         if self.odrv.axis0.current_state != AxisState.FULL_CALIBRATION_SEQUENCE:
             self.odrv.axis0.requested_state = AxisState.FULL_CALIBRATION_SEQUENCE
-        time.sleep(0.2)
+        custom_sleep(0.2)
 
         # Wait for calibration to end
         while (
@@ -117,7 +131,7 @@ class ODrive_Joint:
             not self.odrv.axis0.current_state
             == AxisState.IDLE
         ):
-            time.sleep(1)
+            custom_sleep(1)
             print(
                 "Motor {} is still calibrating. Current state: {}".format(
                     self.odrv.serial_number,
@@ -131,7 +145,7 @@ class ODrive_Joint:
             results_available = True
             if self.odrv.axis0.procedure_result == ProcedureResult.BUSY:
                 results_available = False
-            time.sleep(0.1)
+            custom_sleep(0.1)
 
         # ERROR CHECKING
         calibration_failed = False
@@ -168,7 +182,7 @@ class ODrive_Joint:
             self.odrv.axis0.current_state != AxisState.CLOSED_LOOP_CONTROL
             or self.odrv.axis0.current_state == AxisState.IDLE
         ):
-            time.sleep(0.5)
+            custom_sleep(0.5)
             print(
                 "Motor {} is still entering closed loop control. Current state: {}".format(
                     self.odrv.serial_number,
@@ -301,7 +315,7 @@ def main():
     #     # Apply the setpoint
     #     odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
     #     dump_errors(odrv_shoulder.odrv)
-    #     time.sleep(0.01)
+    #     custom_sleep(0.01)
 
     # PROMPT FOR SETPOINT (INCREMENTAL AND ABSOLUTE) -----------------------------------------------------
     while True:
@@ -351,7 +365,7 @@ def main():
             # Skip the rest of the loop and prompt for input again
             continue
 
-        time.sleep(0.01)
+        custom_sleep(0.01)
 
     # PROMPT FOR SETPOINT ----------------------------------------------------------------
     # while True:
@@ -368,7 +382,7 @@ def main():
     #     )
     #     odrv_shoulder.odrv.axis0.controller.input_pos = setpoint
     #     dump_errors(odrv_shoulder.odrv)
-    #     time.sleep(0.01)
+    #     custom_sleep(0.01)
 
     # Stop watchdog thread, when closing the script -------------------------------------------------
     watchdog_stop_event.set()
