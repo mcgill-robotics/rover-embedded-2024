@@ -37,7 +37,7 @@ catkin_package(
 )
 
 catkin_install_python(PROGRAMS
-  src/ODrive.py
+  src/odrive_interface_arm.py
 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

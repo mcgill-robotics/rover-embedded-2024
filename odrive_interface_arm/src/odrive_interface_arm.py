@@ -9,7 +9,15 @@ from odrive.utils import dump_errors
 from std_msgs.msg import Float32MultiArray
 from ODrive_utils import *
 from ODrive_Joint import *
-from msg import MotorState, MotorError
+from odrive_interface_arm.msg import MotorState, MotorError
+
+# try:
+#     from odrive_interface_arm.msg import MotorState, MotorError
+# except ImportError:
+#     current_dir = os.path.dirname(os.path.realpath(__file__))
+#     msg_dir = os.path.join(current_dir, '..', 'msg')
+#     sys.path.append(msg_dir)
+#     from your_module import *
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(currentdir)
@@ -21,35 +29,40 @@ class FeedbackMode(Enum):
 
 
 # CONFIGURATION
-# TODO find more serial, it is a string of hex of the serial number
+# Serial number of the ODrive controlling the joint
+# TODO Elbow and waist motors
 arm_serial_numbers = {
-    "rover_arm_shoulder": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
-    "rover_arm_elbow": "0",
-    "rover_arm_waist": "0",
+    "elbow_joint": "0",
+    "shoulder_joint": "386434413539",  # 0x386434413539 = 62003024573753 in decimal
+    "waist_joint": "0",
 }
 current_mode = FeedbackMode.FROM_ODRIVE
 
 # VARIABLES
-arm_joint_lst = []
+arm_joint_lst = {}
 
 
 # TODO: Once drive is working well, expand this node to include the three arm motors
 class Node_odrive_interface_arm:
     def __init__(self):
-        # Feedback publishers
-        self.elbow_pos_outshaft = 0.0
-        self.shoulder_pos_outshaft = 0.0
-        self.waist_pos_outshaft = 0.0
+        # FEEDBACK VARIABLES
+        self.joint_pos_outshaft_dict = {}
+        # LEGACY CODE
+        # self.elbow_pos_outshaft = 0.0
+        # self.shoulder_pos_outshaft = 0.0
+        # self.waist_pos_outshaft = 0.0
 
-        # Setpoints for the arm motors
-        self.elbow_pos_setpoint = 0.0
-        self.shoulder_pos_setpoint = 0.0
-        self.waist_pos_setpoint = 0.0
+        # SETPOINT VARIABLES
+        self.joint_setpoint_dict = {}
+        # LEGACY CODE
+        # self.elbow_pos_setpoint = 0.0
+        # self.shoulder_pos_setpoint = 0.0
+        # self.waist_pos_setpoint = 0.0
 
         # Subscriptions
         rospy.init_node("odrive_interface")
         self.outshaft_subscriber = rospy.Subscriber(
-            "/arm_lower_output_shaft_position",
+            "/arm_outshaft_fb",
             Float32MultiArray,
             self.handle_arm_outshaft_fb,
         )
@@ -74,66 +87,100 @@ class Node_odrive_interface_arm:
 
     # Update encoder angle from external encoders
     def handle_arm_outshaft_fb(self, msg):
-        self.elbow_pos_outshaft = msg.data[0]
-        self.shoulder_pos_outshaft = msg.data[1]
-        self.waist_pos_outshaft = msg.data[2]
+        self.joint_pos_outshaft_dict["elbow_joint"] = msg.data[0]
+        self.joint_pos_outshaft_dict["shoulder_joint"] = msg.data[1]
+        self.joint_pos_outshaft_dict["waist_joint"] = msg.data[2]
+        # LEGACY CODE
+        # self.elbow_pos_outshaft = msg.data[0]
+        # self.shoulder_pos_outshaft = msg.data[1]
+        # self.waist_pos_outshaft = msg.data[2]
         if current_mode == FeedbackMode.FROM_OUTSHAFT:
             self.feedback_publisher.publish(msg)
 
     # Receive setpoint from external control node
     def handle_arm_command(self, msg):
-        self.elbow_pos_setpoint = msg.data[0]
-        self.shoulder_pos_setpoint = msg.data[1]
-        self.waist_pos_setpoint = msg.data[2]
+        self.joint_setpoint_dict["elbow_joint"] = msg.data[0]
+        self.joint_setpoint_dict["shoulder_joint"] = msg.data[1]
+        self.joint_setpoint_dict["waist_joint"] = msg.data[2]
+        # LEGACY CODE
+        # self.elbow_pos_setpoint = msg.data[0]
+        # self.shoulder_pos_setpoint = msg.data[1]
+        # self.waist_pos_setpoint = msg.data[2]
 
     def run(self):
-        # Discover motors on startup and assign variables for each
-        # TODO Elbow and waist motors
-        odrv_shoulder = ODrive_Joint(
-            odrive.find_any(
-                serial_number=arm_serial_numbers["rover_arm_shoulder"], timeout=5
-            )
-        )
+        # CONNECT TO ODRIVE
+        for key in arm_serial_numbers.keys():
+            if arm_serial_numbers[key] != "0":
+                arm_joint_lst[key] = ODrive_Joint(
+                    odrive.find_any(serial_number=arm_serial_numbers[key], timeout=5)
+                )
+        # LEGACY CODE for accessing ODrive_Joint objects
+        elbow_joint = arm_joint_lst.get("elbow_joint", None)
+        shoulder_joint = arm_joint_lst.get("shoulder_joint", None)
+        waist_joint = arm_joint_lst.get("waist_joint", None)
+
+        # Predefine the order of joints for publishing feedback
+        joint_order = ["elbow_joint", "shoulder_joint", "waist_joint"]
 
         # MAIN LOOP
         while not rospy.is_shutdown():
-            # TODO ODrive feedback
-            # Get feedback and publish it to "/wheel_velocity_feedback"
-            # feedback = WheelSpeed()
-            # measured_speed_lb = -drive_lb.encoder_estimator0.vel_estimate
-            # measured_speed_lf = -drive_lf.encoder_estimator0.vel_estimate
-            # measured_speed_rb = drive_rb.encoder_estimator0.vel_estimate
-            # measured_speed_rf = drive_rf.encoder_estimator0.vel_estimate
-
-            # feedback.left[0], feedback.left[1] = measured_speed_lb, measured_speed_lf
-            # feedback.right[0], feedback.right[1] = measured_speed_rb, measured_speed_rf
-            # self.feedback_publisher.publish(feedback)
-
             if current_mode == FeedbackMode.FROM_ODRIVE:
-                # Publish feedback from ODrive
                 feedback = Float32MultiArray()
-                feedback.data = [
-                    odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel,
-                    odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_abs,
-                ]
+                for joint_name in joint_order:
+                    joint = arm_joint_lst.get(joint_name)
+                    if joint is not None:
+                        # Assuming .odrv.axis0.pos_vel_mapper.pos_abs and .gear_ratio are correct
+                        feedback.data.append(
+                            joint.odrv.axis0.pos_vel_mapper.pos_abs / joint.gear_ratio
+                        )
+                    else:
+                        # Append a default value or handle missing joint case
+                        feedback.data.append(0.0)
+                # Publish feedback
                 self.feedback_publisher.publish(feedback)
+
+                # LEGACY CODE
+                # shoulder_pos_fb = (
+                #     shoulder_joint.odrv.axis0.pos_vel_mapper.pos_abs
+                #     / shoulder_joint.gear_ratio
+                # )
+                # feedback.data = [
+                #     0,
+                #     shoulder_pos_fb,
+                #     0,
+                # ]
+                # self.feedback_publisher.publish(feedback)
+
             # APPLY SETPOINT
-            # TODO Elbow and waist motors
-            shoulder_pos_error = self.shoulder_pos_setpoint - self.shoulder_pos_outshaft
-            shoulder_pos_increment = shoulder_pos_error * odrv_shoulder.gear_ratio
-            shoulder_pos_setpoint = (
-                odrv_shoulder.odrv.axis0.pos_vel_mapper.pos_rel + shoulder_pos_increment
-            )
-            odrv_shoulder.odrv.axis0.controller.input_pos = shoulder_pos_setpoint
+            for joint in arm_joint_lst:
+                if joint is None:
+                    continue
+                if current_mode == FeedbackMode.FROM_ODRIVE:
+                    joint.odrv.axis0.controller.input_pos = self.shoulder_pos_setpoint
+            # LEGACY CODE
+            # shoulder_pos_error = self.shoulder_pos_setpoint - self.shoulder_pos_outshaft
+            # shoulder_pos_increment = shoulder_pos_error * shoulder_joint.gear_ratio
+            # shoulder_pos_setpoint = (
+            #     shoulder_joint.odrv.axis0.pos_vel_mapper.pos_rel
+            #     + shoulder_pos_increment
+            # )
+            # shoulder_joint.odrv.axis0.controller.input_pos = shoulder_pos_setpoint
 
             # PRINT POSITIONS TO CONSOLE
             print(
-                f"\rElbow: {round(self.elbow_pos_outshaft, 2)}, Shoulder: {round(self.shoulder_pos_outshaft, 2)}, Waist: {round(self.waist_pos_outshaft, 2)}",
+                f"\rElbow: {round(self.joint_pos_outshaft_dict['elbow_joint'], 2)}, Shoulder: {round(self.joint_pos_outshaft_dict['shoulder_joint'], 2)}, Waist: {round(self.joint_pos_outshaft_dict['waist_joint'], 2)}",
                 end="",
             )
+            # print(
+            #     f"\rElbow: {round(self.elbow_pos_outshaft, 2)}, Shoulder: {round(self.shoulder_pos_outshaft, 2)}, Waist: {round(self.waist_pos_outshaft, 2)}",
+            #     end="",
+            # )
 
             # SEND ODRIVE INFO AND HANDLE ERRORS
             for joint in arm_joint_lst:
+                if joint is None:
+                    continue
+
                 state_fb = MotorState()
                 state_fb.id = joint.serial_number
                 state_fb.state = joint.odrv.axis0.current_state
@@ -208,6 +255,8 @@ class Node_odrive_interface_arm:
         # On shutdown, bring motors to idle state
         print("Shutdown prompt received. Setting all motors to idle state.")
         for joint in arm_joint_lst:
+            if joint is None:
+                continue
             joint.odrv.axis0.requested_state = AxisState.IDLE
 
 
