@@ -60,7 +60,7 @@ class Node_odrive_interface_arm:
         # self.waist_pos_setpoint = 0.0
 
         # Subscriptions
-        rospy.init_node("odrive_interface")
+        rospy.init_node("odrive_interface_arm")
         self.outshaft_subscriber = rospy.Subscriber(
             "/arm_outshaft_fb",
             Float32MultiArray,
@@ -131,7 +131,11 @@ class Node_odrive_interface_arm:
                     if joint is not None:
                         # Assuming .odrv.axis0.pos_vel_mapper.pos_abs and .gear_ratio are correct
                         feedback.data.append(
-                            joint.odrv.axis0.pos_vel_mapper.pos_abs / joint.gear_ratio
+                            360
+                            * (
+                                joint.odrv.axis0.pos_vel_mapper.pos_abs
+                                / joint.gear_ratio
+                            )
                         )
                     else:
                         # Append a default value or handle missing joint case

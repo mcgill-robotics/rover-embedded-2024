@@ -32,7 +32,7 @@ catkin_package(
     roscpp
     rospy 
     std_msgs
-    LIBRARIES odrive_interface
+    LIBRARIES odrive_interface_arm
     CATKIN_DEPENDS message_runtime
 )
 
