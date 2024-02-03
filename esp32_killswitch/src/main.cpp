@@ -45,7 +45,7 @@ void tx_setup()
 {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(BUZZER, OUTPUT);
-
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), stopRover, RISING);
   Serial.begin(115200);
 
   // Initialize Bluetooth with name ESP32_TX, true sets it as master
@@ -76,17 +76,20 @@ void tx_loop()
   Serial.println("Button state: " + String(button_state));
   if (button_state == HIGH)
   {
-    ESP_BT.println("ON"); // Send "ON" via Bluetooth
-    tone(BUZZER, 1000);
-    delay(500);
-    noTone(BUZZER);
-    delay(10000);
+    stopRover();
   }
   else
   {
     ESP_BT.println("OFF"); // Send "OFF" via Bluetooth
   }
   delay(10);
+}
+void IRAM_ATTR stopRover(){
+    ESP_BT.println("ON"); // Send "ON" via Bluetooth
+    tone(BUZZER, 1000);
+    delay(500);
+    noTone(BUZZER);
+    delay(500);
 }
 
 void rx_setup()
@@ -95,6 +98,7 @@ void rx_setup()
   pinMode(TRANSISTOR_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUZZER, OUTPUT);
+  digitalWrite(TRANSISTOR_PIN, HIGH);
 
   Serial.begin(115200);     // Start Serial communication for debugging
   ESP_BT.begin("ESP32_RX"); // Start Bluetooth with name ESP32_RX
@@ -102,7 +106,7 @@ void rx_setup()
   lastReadTime = micros();
 }
 
-void rx_loop()
+void rx_loop(bool kill)
 {
   // LED DEBUG
   // if (micros() - lastReadTime >= microsBetweenReadings)
@@ -111,38 +115,44 @@ void rx_loop()
   //   digitalWrite(LED_PIN, !digitalRead(LED_PIN));
   //   Serial.println("LED state: " + String(digitalRead(LED_PIN)));
   // }
+    if(ESP_BT.connected()){
+        if (ESP_BT.available())
+        {                                            // Check if data is available to read
+            String msg = ESP_BT.readStringUntil('\n'); // Read the incoming data
+            msg.trim();                                // Remove any whitespace
 
-  if (ESP_BT.available())
-  {                                            // Check if data is available to read
-    String msg = ESP_BT.readStringUntil('\n'); // Read the incoming data
-    msg.trim();                                // Remove any whitespace
-
-    // Flip if necessary.
-    if (msg == "ON")
-    {
-      digitalWrite(LED_PIN, HIGH); // Turn the LED on
-      digitalWrite(TRANSISTOR_PIN, HIGH);
-      tone(BUZZER, 85);
-      delay(1000);
-      noTone(BUZZER);
-      delay(10000);
-      Serial.println("SWITCH HIGH");
+            // Flip if necessary.
+            if (msg == "ON")
+            {
+            digitalWrite(LED_PIN, HIGH); // Turn the LED on
+            digitalWrite(TRANSISTOR_PIN, LOW);
+            delay(250);
+            tone(BUZZER, 85);
+            delay(500);
+            noTone(BUZZER);
+            delay(250);
+            Serial.println("SWITCH HIGH");
+            kill=true;
+            }
+            else if (!kill){
+                digitalWrite(LED_PIN, LOW);
+                digitalWrite(TRANSISTOR_PIN, HIGH);
+            }
+            else{
+                digitalWrite(LED_PIN, HIGH);
+                digitalWrite(TRANSISTOR_PIN, LOW);
+            }
+        }
     }
-    else if (msg == "OFF")
-    {
-      digitalWrite(LED_PIN, LOW); // Turn the LED off
-      digitalWrite(TRANSISTOR_PIN, LOW);
-      Serial.println("SWITCH LOW");
+    else{
+        digitalWrite(TRANSISTOR_PIN, LOW);
     }
-    else
-    {
-      Serial.println("Received unrecognized command: " + msg);
-    }
-  }
 }
 
 void setup()
 {
+
+bool kill = false;
 #if DEBUG_MODE == 1
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
@@ -172,7 +182,7 @@ void loop()
   }
   else
   {
-    rx_loop();
+    rx_loop(kill);
   }
 #endif
 }
