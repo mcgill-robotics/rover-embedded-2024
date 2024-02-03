@@ -32,6 +32,8 @@ public:
 
     void set_parameters(uint8_t direction, float offset, float resolution);
 
+    void update_turn_count(int new_turn_count);
+
     /**
      * Main logic loop for calculating detected encoder velocity
      *
