@@ -20,10 +20,11 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
 
     _angularVelocity = 0.0;
     _position = _offset * (_resolution / 360.0);
+    _last_position = 0.0;
 
     // TODO: check implementation multi-turn, should default true or false?
     _turn_count = 0;
-    _angle = 0.0;       // angle from 0 to 360 in degrees
+    _angle = 0.0; // angle from 0 to 360 in degrees
     _is_multi_turn = true;
 
     switch (port)
@@ -85,7 +86,7 @@ float model_encoder::read_encoder_angle()
     // TODO: implement multi-turn, check if transition from 0 to 360 or 360 to 0
     // then increment or decrement turn count as appropriate
 
-    return _angle; 
+    return _angle;
 }
 
 float model_encoder::get_angle()
@@ -93,10 +94,6 @@ float model_encoder::get_angle()
     return _angle + _turn_count * 360.0;
 }
 
-void model_encoder::update_turn_count(float setpoint_es)
-{
-    
-}
 
 void model_encoder::set_parameters(uint8_t direction, float offset, float resolution)
 {
