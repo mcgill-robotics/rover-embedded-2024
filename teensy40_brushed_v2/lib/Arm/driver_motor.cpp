@@ -27,6 +27,7 @@ void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_p
 	_gear_ratio = 1.0;		   // default for no effect
 	_angle_full_turn = 360.0f; // encoder angle corresponding to a full turn (considering gear ratio)
 
+	// linear joint by default
 	_is_circular_joint = false;
 
 	_ctrl_period = 0.0;

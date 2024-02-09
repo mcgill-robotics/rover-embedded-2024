@@ -7,6 +7,9 @@
 
 #include <memory>
 
+// CONFIGURATION
+#define BRUSHED_BOARD_TEST 0
+
 #define OUTA_Pin ENCPIN1_1
 #define OUTB_Pin ENCPIN1_2
 
@@ -15,12 +18,22 @@ driver_motor mot1;
 driver_motor mot2;
 driver_motor mot3;
 
-// test thingy
+// TESTER VARIABLES
 int stage = 0;
 int pos = 90;
 
+// FUNCTION DECLARATIONS
+void brushed_board_tester();
+void brushed_board_loop();
+void lim1ISR();
+void lim2ISR();
+void lim3ISR();
+void lim4ISR();
+void lim5ISR();
+void lim6ISR();
+
 // Define the size of the moving average window
-#define MOVING_AVERAGE_SIZE 10
+const uint32_t MOVING_AVERAGE_SIZE = 10;
 float cur1_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
 float cur2_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
 float cur3_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
@@ -61,13 +74,6 @@ volatile bool lim3_state = false;
 volatile bool lim4_state = false;
 volatile bool lim5_state = false;
 volatile bool lim6_state = false;
-
-void lim1ISR();
-void lim2ISR();
-void lim3ISR();
-void lim4ISR();
-void lim5ISR();
-void lim6ISR();
 
 void setup()
 {
@@ -162,8 +168,118 @@ void setup()
     current_rotation = Rotation2d::getRotationFromDeg(0);
     SerialUSB.println("Done Setup");
 }
-/* Comment out working test loop
+
 void loop()
+{
+#if BRUSHED_BOARD_TEST == 1
+    brushed_board_tester();
+#else
+    brushed_board_loop();
+#endif
+}
+
+void brushed_board_loop()
+{
+    delay(100);
+
+    if (stage)
+    {
+        SerialUSB.println("Already reached target position");
+    }
+    else
+    {
+        mot1.set_target_position(pos);
+        mot1.closed_loop_control_tick();
+        float enc1_angle = mot1._encoder->get_angle();
+        SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
+
+        if (enc1_angle == pos)
+        {
+            SerialUSB.println("Reached target position");
+            stage++;
+        }
+    }
+}
+
+void lim1ISR()
+{
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+
+    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
+    {
+        SerialUSB.println("LIM_1 triggered");
+        last_interrupt_time = interrupt_time;
+        lim1_state = digitalRead(LIM_1);
+    }
+}
+
+void lim2ISR()
+{
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+
+    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
+    {
+        SerialUSB.println("LIM_2 triggered");
+        last_interrupt_time = interrupt_time;
+        lim2_state = digitalRead(LIM_2);
+    }
+}
+
+void lim3ISR()
+{
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+
+    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
+    {
+        SerialUSB.println("LIM_3 triggered");
+        last_interrupt_time = interrupt_time;
+        lim3_state = digitalRead(LIM_3);
+    }
+}
+
+void lim4ISR()
+{
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+
+    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
+    {
+        SerialUSB.println("LIM_4 triggered");
+        last_interrupt_time = interrupt_time;
+        lim4_state = digitalRead(LIM_4);
+    }
+}
+
+void lim5ISR()
+{
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+
+    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
+    {
+        SerialUSB.println("LIM_5 triggered");
+        last_interrupt_time = interrupt_time;
+        lim5_state = digitalRead(LIM_5);
+    }
+}
+
+void lim6ISR()
+{
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+
+    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
+    {
+        SerialUSB.println("LIM_6 triggered");
+        last_interrupt_time = interrupt_time;
+        lim6_state = digitalRead(LIM_6);
+    }
+}
+
+void brushed_board_tester()
 {
     delay(100);
 
@@ -263,106 +379,4 @@ void loop()
     // SerialUSB.println(counter);
 
     SerialUSB.println();
-}
-*/
-
-void loop()
-{
-    delay(100);
-
-    if (stage)
-    {
-        SerialUSB.println("Already reached target position");
-    }
-    else
-    {
-        mot1.set_target_position(pos);
-        mot1.closed_loop_control_tick();
-        float enc1_angle = mot1._encoder->get_angle();
-        SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
-
-        if (enc1_angle == pos)
-        {
-            SerialUSB.println("Reached target position");
-            stage++;
-        }
-    }
-}
-
-void lim1ISR()
-{
-    static unsigned long last_interrupt_time = 0;
-    unsigned long interrupt_time = millis();
-
-    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
-    {
-        SerialUSB.println("LIM_1 triggered");
-        last_interrupt_time = interrupt_time;
-        lim1_state = digitalRead(LIM_1);
-    }
-}
-
-void lim2ISR()
-{
-    static unsigned long last_interrupt_time = 0;
-    unsigned long interrupt_time = millis();
-
-    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
-    {
-        SerialUSB.println("LIM_2 triggered");
-        last_interrupt_time = interrupt_time;
-        lim2_state = digitalRead(LIM_2);
-    }
-}
-
-void lim3ISR()
-{
-    static unsigned long last_interrupt_time = 0;
-    unsigned long interrupt_time = millis();
-
-    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
-    {
-        SerialUSB.println("LIM_3 triggered");
-        last_interrupt_time = interrupt_time;
-        lim3_state = digitalRead(LIM_3);
-    }
-}
-
-void lim4ISR()
-{
-    static unsigned long last_interrupt_time = 0;
-    unsigned long interrupt_time = millis();
-
-    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
-    {
-        SerialUSB.println("LIM_4 triggered");
-        last_interrupt_time = interrupt_time;
-        lim4_state = digitalRead(LIM_4);
-    }
-}
-
-void lim5ISR()
-{
-    static unsigned long last_interrupt_time = 0;
-    unsigned long interrupt_time = millis();
-
-    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
-    {
-        SerialUSB.println("LIM_5 triggered");
-        last_interrupt_time = interrupt_time;
-        lim5_state = digitalRead(LIM_5);
-    }
-}
-
-void lim6ISR()
-{
-    static unsigned long last_interrupt_time = 0;
-    unsigned long interrupt_time = millis();
-
-    if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY)
-    {
-        SerialUSB.println("LIM_6 triggered");
-        last_interrupt_time = interrupt_time;
-        lim6_state = digitalRead(LIM_6);
-    }
 }
