@@ -55,7 +55,7 @@ private:
     velocity_estimation _velocityEstimation;
     boolean _is_multi_turn;
     int _turn_count;
-    float _last_position;
+    float _last_angle;
 };
 
 #endif

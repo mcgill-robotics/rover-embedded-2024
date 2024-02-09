@@ -20,7 +20,7 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
 
     _angularVelocity = 0.0;
     _position = _offset * (_resolution / 360.0);
-    _last_position = 0.0;
+    _last_angle = 0.0;
 
     // TODO: check implementation multi-turn, should default true or false?
     _turn_count = 0;
@@ -79,6 +79,7 @@ void model_encoder::position_reset_encoder(float offset)
 float model_encoder::read_encoder_angle()
 {
     _position = _encoder->read();
+    // Useless since _position always positive?
     _angle = (_position >= 0) ? (_position % _resolution) : _resolution - (abs(_position) % _resolution);
     _angle = (360.0 / _resolution) * _angle;
     _velocityEstimation.update_readings(_position * (360.0 / _resolution), micros());
@@ -86,14 +87,26 @@ float model_encoder::read_encoder_angle()
     // TODO: implement multi-turn, check if transition from 0 to 360 or 360 to 0
     // then increment or decrement turn count as appropriate
 
-    return _angle;
+    if (_is_multi_turn)
+    {
+        if (_last_angle > 270 && _angle < 90)
+        {
+            _turn_count++;
+        }
+        else if (_last_angle < 90 && _angle > 270)
+        {
+            _turn_count--;
+        }
+    }
+
+    _last_angle = _angle;
+    return _angle + _turn_count * 360.0;
 }
 
 float model_encoder::get_angle()
 {
     return _angle + _turn_count * 360.0;
 }
-
 
 void model_encoder::set_parameters(uint8_t direction, float offset, float resolution)
 {
