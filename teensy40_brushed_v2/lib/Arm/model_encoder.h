@@ -26,9 +26,11 @@ public:
 
     void position_reset_encoder(float offset);
 
-    float read_encoder_angle(void);
+    void poll_encoder_angle(void);
 
     float get_angle(void);
+
+    float get_relative_angle(void);
 
     void set_parameters(uint8_t direction, float offset, float resolution);
 

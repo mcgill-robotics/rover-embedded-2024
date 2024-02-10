@@ -63,7 +63,7 @@ void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_p
 	//  _pwm_setup(_motor_pwm_pin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
 
 	// TODO: Including PID initialization here, potentially move later
-	pid_instance = new PID(0.1, 24, 0, 1.0, 0.0, 0.0); // TODO: all arguments are arbitrary...just trying to get it to work
+	pid_instance = new PID(0.1, 24, 0, 2.0, 0, 0); // TODO: all arguments are arbitrary...just trying to get it to work
 }
 
 /// @brief Sets the torque and writes the PWM value to the motor
@@ -106,15 +106,15 @@ void driver_motor::closed_loop_control_tick()
 	float setpoint_es = _target_position * _gear_ratio;
 
 	// current_angle_es is the current angle after gear ratio translation
-	this->_encoder->read_encoder_angle();
+	this->_encoder->poll_encoder_angle();
 	float current_angle_es = this->_encoder->get_angle();
 
 	// For later, diff can influence PID coefficients
-	float diff = abs(setpoint_es - current_angle_es);
+	float diff = setpoint_es - current_angle_es;
 
 	// Determine whether to move forward or backwards
-	float forward_distance = (setpoint_es > current_angle_es) ? (setpoint_es - current_angle_es) : (setpoint_es + _angle_full_turn - current_angle_es);
-	float backward_distance = (setpoint_es > current_angle_es) ? (_angle_full_turn - (setpoint_es - current_angle_es)) : (current_angle_es - setpoint_es);
+	float forward_distance = (setpoint_es > current_angle_es) ? (setpoint_es - current_angle_es) : (setpoint_es + _angle_full_turn - current_angle_es);	   // CCW
+	float backward_distance = (setpoint_es > current_angle_es) ? (_angle_full_turn - (setpoint_es - current_angle_es)) : (current_angle_es - setpoint_es); // CW
 
 	// float forward_distance = (_target_position > current_angle_es) ? (_target_position - current_angle_es) : (360.0 - current_angle_es + _target_position);	 // CCW
 	// float backward_distance = (_target_position > current_angle_es) ? (360.0 - _target_position + current_angle_es) : (current_angle_es - _target_position); // CW
@@ -153,10 +153,20 @@ void driver_motor::closed_loop_control_tick()
 	// Linear joint
 	else
 	{
+		if (diff > 0)	//pos
+		{
+			set_direction(1); // set direction to forwards
+		}
+		else		//neg/
+		{
+			set_direction(0); // set direction to backwards
+		}
+		
 		pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
 	}
 
 	// output to motor
+	// 255 is the max pwm value, 24 is the max voltage
 	float pwm_output = pid_output * 255.0 / 24.0;
 
 	this->_pwm_write_duty(_motor_pwm_pin, pwm_output);
