@@ -87,6 +87,8 @@ float model_encoder::read_encoder_angle()
     // TODO: implement multi-turn, check if transition from 0 to 360 or 360 to 0
     // then increment or decrement turn count as appropriate
 
+    int i = 0;
+
     if (_is_multi_turn)
     {
         if (_last_angle > 270 && _angle < 90)
