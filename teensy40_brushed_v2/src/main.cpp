@@ -90,10 +90,11 @@ void setup()
     std::unique_ptr<model_sensor> cur3 = std::make_unique<model_sensor>();
 
     // Initialize encoders
-    // 43000 clicks for wrist pitch, TODO check others
+    // 43000 clicks for wrist pitch, 32580 for wrist roll
     // Only using 1 & 2 becase 1 & 3 conflicts
-    enc1->initialize_encoder(0, 0, 32580, 1);       //new small servo estimate for resolution
-    enc2->initialize_encoder(0, 0, 43000, 2);       
+    // Could be 32768 since it's a power of 2
+    enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
+    enc2->initialize_encoder(0, 0, 43000, 2);
     // enc3->initialize_encoder(0, 0, 43000, 3);
 
     // Initialize current sensors
@@ -197,8 +198,8 @@ void brushed_board_loop()
         if (enc1_angle <= pos + tolerance && enc1_angle >= pos - tolerance && stage == 0)
         {
             SerialUSB.println("Reached target position");
-            //pos = -60;
-            //stage++;
+            // pos = -60;
+            // stage++;
         }
     }
 }
@@ -325,12 +326,13 @@ void brushed_board_tester()
     // float enc3_angle = mot3._encoder->get_angle();
     SerialUSB.printf("enc1_angle: %8.4f, rel_angle: %8.4f, tick: %8.4f",
                      enc1_angle, rel_angle, enc1_tick);
-    
-    if(enc1_angle <= 2881 && enc1_angle >= 2879)
+
+    if (enc1_angle <= 2881 && enc1_angle >= 2879)
     {
         SerialUSB.printf("\n2880 here^");
         analogWrite(PWMPIN1, 0);
-        while(true);
+        while (true)
+            ;
     }
 
     // TEST GRAVITY COMPENSATION --------------------------------------------------------------------

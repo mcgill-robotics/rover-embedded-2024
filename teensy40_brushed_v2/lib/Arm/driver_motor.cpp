@@ -27,8 +27,10 @@ void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_p
 	_gear_ratio = 1.0;		   // default for no effect
 	_angle_full_turn = 360.0f; // encoder angle corresponding to a full turn (considering gear ratio)
 
-	// linear joint by default
+	// Linear joint by default.
 	_is_circular_joint = false;
+	// Foward logic is 1 by default
+	_forward_dir = 1;
 
 	_ctrl_period = 0.0;
 	_sampling_period = 0.0;
@@ -126,7 +128,7 @@ void driver_motor::closed_loop_control_tick()
 		// Backwards
 		if (backward_distance < forward_distance - 10.0) // TODO: handle hysterics? 10.0 was used previously
 		{
-			set_direction(0); // set direction to backwards
+			set_direction(!_forward_dir); // set direction to backwards
 			if (setpoint_es < current_angle_es)
 			{
 				pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
@@ -139,7 +141,7 @@ void driver_motor::closed_loop_control_tick()
 		// Forwards
 		else
 		{
-			set_direction(1); // set direction to forwards
+			set_direction(_forward_dir); // set direction to forwards
 			if (setpoint_es > current_angle_es)
 			{
 				pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
@@ -153,13 +155,13 @@ void driver_motor::closed_loop_control_tick()
 	// Linear joint
 	else
 	{
-		if (diff > 0)	//pos
+		if (diff > 0) // pos
 		{
-			set_direction(1); // set direction to forwards
+			set_direction(_forward_dir); // set direction to forwards
 		}
-		else		//neg/
+		else // neg/
 		{
-			set_direction(0); // set direction to backwards
+			set_direction(!_forward_dir); // set direction to backwards
 		}
 
 		pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
@@ -299,4 +301,9 @@ void driver_motor::set_gear_ratio(float gear_ratio)
 void driver_motor::set_is_circular_joint(bool is_circular_joint)
 {
 	_is_circular_joint = is_circular_joint;
+}
+
+void driver_motor::set_forward_dir(uint8_t forward_dir)
+{
+	_forward_dir = forward_dir;
 }

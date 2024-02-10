@@ -53,6 +53,8 @@ public:
 	void set_gear_ratio(float gear_ratio);
 
 	void set_is_circular_joint(boolean is_circular_joint);
+	// Set the logic that defines the forward direction of the motor
+	void set_forward_dir(uint8_t forward_dir);
 
 	/// @brief Sets the positive direction of the motor
 	/// @param direction Positive direction of motor (CW or CCW)
@@ -107,7 +109,10 @@ public:
 	std::unique_ptr<model_encoder> _encoder;
 	std::unique_ptr<model_sensor> _current_sensor;
 
+	// JOINT CONFIG.
 	boolean _is_circular_joint;
+	uint8_t _forward_dir;
+
 
 	uint8_t _motor_pwm_pin;
 	uint8_t _motor_dir_pin;
