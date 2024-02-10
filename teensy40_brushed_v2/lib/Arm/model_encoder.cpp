@@ -76,7 +76,7 @@ void model_encoder::position_reset_encoder(float offset)
     _encoder->write(_position);
 }
 
-float model_encoder::read_encoder_angle()
+void model_encoder::poll_encoder_angle()
 {
     _position = _encoder->read();
     // Useless since _position always positive?
@@ -86,8 +86,6 @@ float model_encoder::read_encoder_angle()
 
     // TODO: implement multi-turn, check if transition from 0 to 360 or 360 to 0
     // then increment or decrement turn count as appropriate
-
-    int i = 0;
 
     if (_is_multi_turn)
     {
@@ -102,12 +100,16 @@ float model_encoder::read_encoder_angle()
     }
 
     _last_angle = _angle;
-    return _angle + _turn_count * 360.0;
 }
 
 float model_encoder::get_angle()
 {
     return _angle + _turn_count * 360.0;
+}
+
+float model_encoder::get_relative_angle()
+{
+    return _angle;
 }
 
 void model_encoder::set_parameters(uint8_t direction, float offset, float resolution)

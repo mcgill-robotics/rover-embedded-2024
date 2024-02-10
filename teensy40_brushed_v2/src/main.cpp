@@ -21,6 +21,7 @@ driver_motor mot3;
 // TESTER VARIABLES
 int stage = 0;
 int pos = 90;
+int tolerance = 0.5;
 
 // FUNCTION DECLARATIONS
 void brushed_board_tester();
@@ -193,10 +194,11 @@ void brushed_board_loop()
         float enc1_angle = mot1._encoder->get_angle();
         SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
 
-        if (enc1_angle == pos)
+        if (enc1_angle <= pos + tolerance && enc1_angle >= pos - tolerance && stage == 0)
         {
             SerialUSB.println("Reached target position");
-            stage++;
+            //pos = -60;
+            //stage++;
         }
     }
 }
@@ -312,14 +314,21 @@ void brushed_board_tester()
 
     // TEST ENCODER --------------------------------------------------------------------
     // Channel 3 is conflicted, unused
-    mot1._encoder->read_encoder_angle();
-    mot2._encoder->read_encoder_angle();
-    // mot3._encoder->read_encoder_angle();
+    mot1._encoder->poll_encoder_angle();
+    mot2._encoder->poll_encoder_angle();
+    // mot3._encoder->poll_encoder_angle();
     float enc1_angle = mot1._encoder->get_angle();
-    float enc2_angle = mot2._encoder->get_angle();
+    float rel_angle = mot1._encoder->get_relative_angle();
+
+    if (enc1_angle > 360){  //switch direction once we reach 360 deg
+        //digitalWrite(DIRPIN1, LOW);
+        mot1.set_direction(0);  //dir change works
+    }
+
+    // float enc2_angle = mot2._encoder->get_angle();
     // float enc3_angle = mot3._encoder->get_angle();
-    SerialUSB.printf("enc1_angle: %8.4f, enc2_angle: %8.4f, enc3_angle: %8.4f",
-                     enc1_angle, enc2_angle, 0);
+    SerialUSB.printf("enc1_angle: %8.4f, rel_angle: %8.4f, enc3_angle: %8.4f",
+                     enc1_angle, rel_angle, 0);
 
     // TEST GRAVITY COMPENSATION --------------------------------------------------------------------
     // double output;
