@@ -20,6 +20,9 @@
 class model_encoder
 {
 public:
+
+    QuadEncoder *_encoder;
+
     void initialize_encoder(uint8_t rotationalDirection, float offset, float resolution, uint8_t port);
 
     void reset_encoder(void);
@@ -44,7 +47,7 @@ public:
     float getVelocity(void);
 
 private:
-    QuadEncoder *_encoder;
+    //QuadEncoder *_encoder;
     int32_t _offset;
     int32_t _resolution;
     uint8_t _port;

@@ -8,7 +8,7 @@
 #include <memory>
 
 // CONFIGURATION
-#define BRUSHED_BOARD_TEST 0
+#define BRUSHED_BOARD_TEST 1
 
 #define OUTA_Pin ENCPIN1_1
 #define OUTB_Pin ENCPIN1_2
@@ -92,8 +92,8 @@ void setup()
     // Initialize encoders
     // 43000 clicks for wrist pitch, TODO check others
     // Only using 1 & 2 becase 1 & 3 conflicts
-    enc1->initialize_encoder(0, 0, 43000, 1);
-    enc2->initialize_encoder(0, 0, 43000, 2);
+    enc1->initialize_encoder(0, 0, 32580, 1);       //new small servo estimate for resolution
+    enc2->initialize_encoder(0, 0, 43000, 2);       
     // enc3->initialize_encoder(0, 0, 43000, 3);
 
     // Initialize current sensors
@@ -319,16 +319,19 @@ void brushed_board_tester()
     // mot3._encoder->poll_encoder_angle();
     float enc1_angle = mot1._encoder->get_angle();
     float rel_angle = mot1._encoder->get_relative_angle();
-
-    if (enc1_angle > 360){  //switch direction once we reach 360 deg
-        //digitalWrite(DIRPIN1, LOW);
-        mot1.set_direction(0);  //dir change works
-    }
+    float enc1_tick = mot1._encoder->_encoder->read();
 
     // float enc2_angle = mot2._encoder->get_angle();
     // float enc3_angle = mot3._encoder->get_angle();
-    SerialUSB.printf("enc1_angle: %8.4f, rel_angle: %8.4f, enc3_angle: %8.4f",
-                     enc1_angle, rel_angle, 0);
+    SerialUSB.printf("enc1_angle: %8.4f, rel_angle: %8.4f, tick: %8.4f",
+                     enc1_angle, rel_angle, enc1_tick);
+    
+    if(enc1_angle <= 2881 && enc1_angle >= 2879)
+    {
+        SerialUSB.printf("\n2880 here^");
+        analogWrite(PWMPIN1, 0);
+        while(true);
+    }
 
     // TEST GRAVITY COMPENSATION --------------------------------------------------------------------
     // double output;
