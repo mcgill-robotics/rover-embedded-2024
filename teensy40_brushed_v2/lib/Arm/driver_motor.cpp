@@ -161,7 +161,7 @@ void driver_motor::closed_loop_control_tick()
 		{
 			set_direction(0); // set direction to backwards
 		}
-		
+
 		pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
 	}
 
