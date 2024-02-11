@@ -20,7 +20,6 @@
 class model_encoder
 {
 public:
-
     QuadEncoder *_encoder;
 
     void initialize_encoder(uint8_t rotationalDirection, float offset, float resolution, uint8_t port);
@@ -31,9 +30,17 @@ public:
 
     void poll_encoder_angle(void);
 
-    float get_angle(void);
+    float get_angle_multi(void);
 
-    float get_relative_angle(void);
+    float get_angle_single(void);
+
+    void set_current_as_angle(float angle);
+
+    float get_full_angle_from_tick()
+    {
+        uint32_t tick = _encoder->read();
+        return (float)tick * 360.0 / (float)_resolution;
+    }
 
     void set_parameters(uint8_t direction, float offset, float resolution);
 
@@ -47,20 +54,24 @@ public:
     float getVelocity(void);
 
 private:
-    //QuadEncoder *_encoder;
+    // QuadEncoder *_encoder;
     int32_t _offset;
     int32_t _resolution;
     uint8_t _port;
-    int32_t _position;
+    int32_t _quad_enc_pos;
     uint8_t _pinA;
     uint8_t _pinB;
 
     float _angle;
+    float _angle_single;
+    float _angle_multi;
     float _angularVelocity;
     velocity_estimation _velocityEstimation;
     boolean _is_multi_turn;
     int _turn_count;
     float _last_angle;
+    // Offset compared to boot position
+    float _zero_angle_offset;
 };
 
 #endif

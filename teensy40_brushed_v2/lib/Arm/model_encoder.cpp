@@ -19,12 +19,13 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
     _port = port;
 
     _angularVelocity = 0.0;
-    _position = _offset * (_resolution / 360.0);
+    _quad_enc_pos = _offset * (_resolution / 360.0);
     _last_angle = 0.0;
 
     // TODO: check implementation multi-turn, should default true or false?
     _turn_count = 0;
-    _angle = 0.0; // angle from 0 to 360 in degrees
+    _angle_multi = 0.0;  // angle from 0 to 360 in degrees
+    _angle_single = 0.0; // angle from 0 to 360 in degrees
     _is_multi_turn = true;
 
     switch (port)
@@ -57,7 +58,8 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
     _encoder = new QuadEncoder(port, _pinA, _pinB);
 
     _encoder->setInitConfig();
-    _encoder->EncConfig.positionInitialValue = _position;
+    _encoder->EncConfig.positionInitialValue = _quad_enc_pos;
+    _encoder->EncConfig.revolutionCountCondition = 1;
     _encoder->init();
 
     _velocityEstimation.initialize_parameters(_resolution, 8.0, 1000000.0, 1, 200000);
@@ -65,51 +67,43 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
 
 void model_encoder::reset_encoder()
 {
-    _position = _offset * (_resolution / 360.0);
-    _encoder->write(_position);
+    _quad_enc_pos = _offset * (_resolution / 360.0);
+    _encoder->write(_quad_enc_pos);
     _encoder->init();
 }
 
 void model_encoder::position_reset_encoder(float offset)
 {
-    _position = offset * (_resolution / 360.0);
-    _encoder->write(_position);
+    _quad_enc_pos = offset * (_resolution / 360.0);
+    _encoder->write(_quad_enc_pos);
 }
 
 void model_encoder::poll_encoder_angle()
 {
-    _position = _encoder->read();
+    _quad_enc_pos = _encoder->read();
+
     // Useless since _position always positive?
-    _angle = (_position >= 0) ? (_position % _resolution) : _resolution - (abs(_position) % _resolution);
-    _angle = (360.0 / _resolution) * _angle;
-    _velocityEstimation.update_readings(_position * (360.0 / _resolution), micros());
+    _angle_single = (_quad_enc_pos >= 0) ? (_quad_enc_pos % _resolution) : _resolution - (abs(_quad_enc_pos) % _resolution);
+    _angle_single = (360.0 / _resolution) * _angle_single;
+    _angle_multi = _quad_enc_pos * (360.0 / _resolution);
 
-    // TODO: implement multi-turn, check if transition from 0 to 360 or 360 to 0
-    // then increment or decrement turn count as appropriate
-
-    if (_is_multi_turn)
-    {
-        if (_last_angle > 270 && _angle < 90)
-        {
-            _turn_count++;
-        }
-        else if (_last_angle < 90 && _angle > 270)
-        {
-            _turn_count--;
-        }
-    }
-
-    _last_angle = _angle;
+    _velocityEstimation.update_readings(_quad_enc_pos * (360.0 / _resolution), micros());
 }
 
-float model_encoder::get_angle()
+float model_encoder::get_angle_multi()
 {
-    return _angle + _turn_count * 360.0;
+    return _angle_multi;
 }
 
-float model_encoder::get_relative_angle()
+float model_encoder::get_angle_single()
 {
-    return _angle;
+    return _angle_single;
+}
+
+void model_encoder::set_current_as_angle(float angle)
+{
+    _quad_enc_pos = angle * (_resolution / 360.0);
+    _encoder->write(_quad_enc_pos);
 }
 
 void model_encoder::set_parameters(uint8_t direction, float offset, float resolution)
@@ -127,10 +121,10 @@ void model_encoder::set_parameters(uint8_t direction, float offset, float resolu
 
     _offset = offset;
     _resolution = resolution;
-    _position = _offset * (_resolution / 360.0);
+    _quad_enc_pos = _offset * (_resolution / 360.0);
 
     _encoder->setInitConfig();
-    _encoder->EncConfig.positionInitialValue = _position;
+    _encoder->EncConfig.positionInitialValue = _quad_enc_pos;
     _encoder->init();
 }
 
