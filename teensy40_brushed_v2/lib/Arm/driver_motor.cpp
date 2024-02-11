@@ -18,19 +18,18 @@
 /// @param maxTorque Maximum torque motor can output
 void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_pin, uint8_t motor_dir_pin, uint8_t motor_fault_pin, float max_torque_motor, float torque_constant_motor)
 {
-	_rotational_direction_motor = direction_motor;
 	_motor_max_torque = max_torque_motor;
 	_torque_constant_motor = torque_constant_motor;
 	_target_torque = 0.0;
-	_target_position = 0.0; // The desired angle to turn to (sent from software)
+	_target_angle_ps = 0.0; // The desired angle to turn to (sent from software)
 	_output_motor = 0;
-	_gear_ratio = 1.0;		   // default for no effect
-	_angle_full_turn = 360.0f; // encoder angle corresponding to a full turn (considering gear ratio)
+	_gear_ratio = 1.0;			  // default for no effect
+	_angle_full_turn_es = 360.0f; // encoder angle corresponding to a full turn (considering gear ratio)
 
 	// Linear joint by default.
 	_is_circular_joint = false;
-	// Foward logic is 1 by default
-	_forward_dir = 1;
+	// Foward direction logic level
+	_forward_dir = direction_motor;
 
 	_ctrl_period = 0.0;
 	_sampling_period = 0.0;
@@ -85,14 +84,14 @@ float driver_motor::get_output_motor(void)
 	return _output_motor;
 }
 
-void driver_motor::set_target_position(float position)
+void driver_motor::set_target_angle_ps(float angle_ps)
 {
-	_target_position = position;
+	_target_angle_ps = angle_ps;
 }
 
-float driver_motor::get_target_position(void)
+float driver_motor::get_target_angle_ps(void)
 {
-	return _target_position;
+	return _target_angle_ps;
 }
 
 void driver_motor::set_control_period(float period)
@@ -101,25 +100,52 @@ void driver_motor::set_control_period(float period)
 	_sampling_period = _ctrl_period * 1e-6;
 }
 
+float driver_motor::get_current_angle_es()
+{
+	this->_encoder->poll_encoder_angle();
+	_current_angle_es = this->_encoder->get_angle_multi();
+	return _current_angle_es;
+}
+
+float driver_motor::get_current_angle_ps()
+{
+	this->_encoder->poll_encoder_angle();
+	float temp = this->_encoder->get_angle_multi();
+	if (_is_circular_joint)
+	{
+		temp = fmod(temp, _angle_full_turn_es);
+	}
+	return temp / _gear_ratio;
+}
+
 void driver_motor::closed_loop_control_tick()
 {
 	// IMPORTANT: es means encoder space
 	// setpoint_es is the desired angle after gear ratio translation
-	float setpoint_es = _target_position * _gear_ratio;
+	float setpoint_es = _target_angle_ps * _gear_ratio;
 
-	// current_angle_es is the current angle after gear ratio translation
-	this->_encoder->poll_encoder_angle();
-	float current_angle_es = this->_encoder->get_angle_multi();
+	// angle_multi_es is the current angle after gear ratio translation
+	float angle_multi_es = get_current_angle_es();
 
 	// For later, diff can influence PID coefficients
-	float diff = setpoint_es - current_angle_es;
+	float diff = setpoint_es - angle_multi_es;
 
 	// Determine whether to move forward or backwards
-	float forward_distance = (setpoint_es > current_angle_es) ? (setpoint_es - current_angle_es) : (setpoint_es + _angle_full_turn - current_angle_es);	   // CCW
-	float backward_distance = (setpoint_es > current_angle_es) ? (_angle_full_turn - (setpoint_es - current_angle_es)) : (current_angle_es - setpoint_es); // CW
+	float forward_distance = (setpoint_es > angle_multi_es) ? (setpoint_es - angle_multi_es) : (_angle_full_turn_es - (angle_multi_es - setpoint_es));	// CCW
+	float backward_distance = (setpoint_es > angle_multi_es) ? (_angle_full_turn_es - (setpoint_es - angle_multi_es)) : (angle_multi_es - setpoint_es); // CW
 
-	// float forward_distance = (_target_position > current_angle_es) ? (_target_position - current_angle_es) : (360.0 - current_angle_es + _target_position);	 // CCW
-	// float backward_distance = (_target_position > current_angle_es) ? (360.0 - _target_position + current_angle_es) : (current_angle_es - _target_position); // CW
+	// CAPPING ANGLE BY JOINT LIMITS, only for linear joints
+	if (!_is_circular_joint)
+	{
+		if (setpoint_es > _max_angle_es)
+		{
+			setpoint_es = _max_angle_es;
+		}
+		else if (setpoint_es < _min_angle_es)
+		{
+			setpoint_es = _min_angle_es;
+		}
+	}
 
 	// Feed to PID and determine error
 	float pid_output = 0.0;
@@ -129,29 +155,30 @@ void driver_motor::closed_loop_control_tick()
 		if (backward_distance < forward_distance - 10.0) // TODO: handle hysterics? 10.0 was used previously
 		{
 			set_direction(!_forward_dir); // set direction to backwards
-			if (setpoint_es < current_angle_es)
+			if (setpoint_es < angle_multi_es)
 			{
-				pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
+				pid_output = pid_instance->calculate(setpoint_es, angle_multi_es);
 			}
 			else
 			{
-				pid_output = pid_instance->calculate(setpoint_es + _angle_full_turn, current_angle_es);
+				pid_output = pid_instance->calculate(setpoint_es + _angle_full_turn_es, angle_multi_es);
 			}
 		}
 		// Forwards
 		else
 		{
 			set_direction(_forward_dir); // set direction to forwards
-			if (setpoint_es > current_angle_es)
+			if (setpoint_es > angle_multi_es)
 			{
-				pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
+				pid_output = pid_instance->calculate(setpoint_es, angle_multi_es);
 			}
 			else
 			{
-				pid_output = pid_instance->calculate(setpoint_es - _angle_full_turn, current_angle_es);
+				pid_output = pid_instance->calculate(setpoint_es - _angle_full_turn_es, angle_multi_es);
 			}
 		}
 	}
+
 	// Linear joint
 	else
 	{
@@ -164,14 +191,15 @@ void driver_motor::closed_loop_control_tick()
 			set_direction(!_forward_dir); // set direction to backwards
 		}
 
-		pid_output = pid_instance->calculate(setpoint_es, current_angle_es);
+		pid_output = pid_instance->calculate(setpoint_es, angle_multi_es);
 	}
 
-	// output to motor
-	// 255 is the max pwm value, 24 is the max voltage
+	// Output to motor
+	// 255 is the max PWM value, 24 is the max voltage
 	float pwm_output = pid_output * 255.0 / 24.0;
 
-	this->_pwm_write_duty(_motor_pwm_pin, pwm_output);
+	this->_pwm_write_duty(pwm_output);
+	return;
 }
 
 void driver_motor::torque_control(float motor_cur)
@@ -180,7 +208,7 @@ void driver_motor::torque_control(float motor_cur)
 	bool direction = LOW;
 	float motor_current;
 
-	if (_rotational_direction_motor)
+	if (_forward_dir)
 	{
 		motor_current = motor_cur;
 	}
@@ -228,7 +256,7 @@ void driver_motor::torque_control(float motor_cur)
 	}
 
 	// Set direction
-	if (_rotational_direction_motor == 0)
+	if (_forward_dir == 0)
 	{
 		direction = !direction;
 	}
@@ -246,19 +274,12 @@ void driver_motor::torque_control(float motor_cur)
 	_output_motor = abs(_output_motor);
 	if (_output_motor > _PWM_OUTPUT_RESOLUTION)
 	{
-		_pwm_write_duty(_motor_pwm_pin, _PWM_OUTPUT_RESOLUTION);
+		_pwm_write_duty(_PWM_OUTPUT_RESOLUTION);
 	}
 	else
 	{
-		_pwm_write_duty(_motor_pwm_pin, (uint32_t)_output_motor);
+		_pwm_write_duty((uint32_t)_output_motor);
 	}
-}
-
-/// @brief Sets the positive direction of the motor
-/// @param direction new positive direction of the motor
-void driver_motor::setDirection(uint8_t direction)
-{
-	_rotational_direction_motor = direction;
 }
 
 /// @brief Sets the resolution of the motor
@@ -272,31 +293,23 @@ void driver_motor::_pwm_set_resolution(uint16_t resolution)
 /// @brief Sets the PWM frequency of the motor
 /// @param pwmPin Pin used for PWM modulation to the motor
 /// @param pwmFreq Frequency to be set for PWM
-void driver_motor::_pwm_setup(uint8_t pwmPin, float pwmFreq)
+void driver_motor::_pwm_setup(float pwmFreq)
 {
-	analogWriteFrequency(pwmPin, pwmFreq);
+	analogWriteFrequency(_motor_pwm_pin, pwmFreq);
 }
 
 /// @brief Writes the PWM value to the motor
 /// @param pwmPin Pin used for PWM modulation to the motor
 /// @param pwmDuty Duty cyle value to be written to PWM
-void driver_motor::_pwm_write_duty(uint8_t pwmPin, uint32_t pwmDuty)
+void driver_motor::_pwm_write_duty(uint32_t pwmDuty)
 {
-	analogWrite(pwmPin, pwmDuty);
-}
-
-/// @brief Sets the positive direction of the motor
-/// @param direction Sets the direction of the motor (1 is positive, 0 is negative)
-void driver_motor::set_direction(uint8_t direction)
-{
-	_rotational_direction_motor = direction;
-	digitalWrite(_motor_dir_pin, direction);
+	analogWrite(_motor_pwm_pin, pwmDuty);
 }
 
 void driver_motor::set_gear_ratio(float gear_ratio)
 {
 	_gear_ratio = gear_ratio;
-	_angle_full_turn = 360.0f * _gear_ratio;
+	_angle_full_turn_es = 360.0f * _gear_ratio;
 }
 
 void driver_motor::set_is_circular_joint(bool is_circular_joint)
@@ -304,6 +317,8 @@ void driver_motor::set_is_circular_joint(bool is_circular_joint)
 	_is_circular_joint = is_circular_joint;
 }
 
+/// @brief Define the forward logic level
+/// @param forward_dir
 void driver_motor::set_forward_dir(uint8_t forward_dir)
 {
 	_forward_dir = forward_dir;
@@ -313,4 +328,11 @@ void driver_motor::set_angle_limit_ps(float max_angle, float min_angle)
 {
 	_max_angle_ps = max_angle;
 	_min_angle_ps = min_angle;
+	_max_angle_es = max_angle * _gear_ratio;
+	_min_angle_es = min_angle * _gear_ratio;
+}
+
+void driver_motor::set_direction(uint8_t direction)
+{
+	digitalWrite(_motor_dir_pin, direction);
 }

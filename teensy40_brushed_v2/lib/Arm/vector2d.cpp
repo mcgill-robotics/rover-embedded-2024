@@ -3,22 +3,20 @@
 #include <cmath>
 #define PI 3.14159
 
-Vector2d::Vector2d (double x, double y):
-    _orientation(0),
-    _x(0),
-    _y(0),
-    _length(0)
+Vector2d::Vector2d(double x, double y) : _orientation(0),
+                                         _x(0),
+                                         _y(0),
+                                         _length(0)
 {
-    updateVectorfromCartesian(x,y);
+    updateVectorfromCartesian(x, y);
 }
 
-Vector2d::Vector2d (double length, Rotation2d orientation):
-    _orientation(0),
-    _x(0),
-    _y(0),
-    _length(0)
+Vector2d::Vector2d(double length, Rotation2d orientation) : _orientation(0),
+                                                            _x(0),
+                                                            _y(0),
+                                                            _length(0)
 {
-    updateVectorfromPolar(length,orientation);
+    updateVectorfromPolar(length, orientation);
 }
 
 void Vector2d::updateVectorfromCartesian(double x, double y)
@@ -40,7 +38,7 @@ void Vector2d::updateVectorfromPolar(double l, Rotation2d orientation)
 double Vector2d::getX() const { return _x; }
 double Vector2d::getY() const { return _y; }
 double Vector2d::getLength() const { return _length; }
- Rotation2d Vector2d::getOrientation() const { return _orientation; }
+Rotation2d Vector2d::getOrientation() const { return _orientation; }
 
 void Vector2d::operator*=(double scalar)
 {
@@ -72,8 +70,8 @@ double Vector2d::dot(Vector2d a, Vector2d b)
 {
     return a.getX() * b.getX() + a.getY() * b.getY();
 }
-void Vector2d::rotateBy(Vector2d& a, Rotation2d theta)
+void Vector2d::rotateBy(Vector2d &a, Rotation2d theta)
 {
-    Rotation2d temp (a.getOrientation().getRad() + theta.getRad());
+    Rotation2d temp(a.getOrientation().getRad() + theta.getRad());
     a.updateVectorfromPolar(a.getLength(), temp);
 }

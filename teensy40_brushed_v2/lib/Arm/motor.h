@@ -357,7 +357,7 @@ double calculateTorque(const Rotation2d pos)
     return -GRAVITY * proto.mass * cm_pos.getLength() * cm_pos.getOrientation().getSin(); // or getCos()?
 }
 
-void maintainStateProto(Rotation2d pos, double* output)
+void maintainStateProto(Rotation2d pos, double *output)
 {
     double torque = calculateTorque(pos);
     MotorState motorState(0, torque);

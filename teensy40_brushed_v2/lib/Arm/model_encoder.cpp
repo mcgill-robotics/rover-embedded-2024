@@ -9,11 +9,11 @@
  *				  V1.0.0 - created
  *
  */
+#include <Arduino.h>
 #include "model_encoder.h"
 
 void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset, float resolution, uint8_t port)
 {
-
     _offset = offset;
     _resolution = resolution;
     _port = port;
@@ -72,9 +72,11 @@ void model_encoder::reset_encoder()
     _encoder->init();
 }
 
-void model_encoder::position_reset_encoder(float offset)
+void model_encoder::set_current_angle(float current_angle)
 {
-    _quad_enc_pos = offset * (_resolution / 360.0);
+    Serial.printf("Setting as current: %f\n", current_angle);
+    _offset = current_angle;
+    _quad_enc_pos = current_angle * (_resolution / 360.0);
     _encoder->write(_quad_enc_pos);
 }
 

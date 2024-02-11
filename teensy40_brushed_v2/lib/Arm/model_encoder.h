@@ -26,7 +26,7 @@ public:
 
     void reset_encoder(void);
 
-    void position_reset_encoder(float offset);
+    void set_current_angle(float offset);
 
     void poll_encoder_angle(void);
 

@@ -44,11 +44,9 @@ public:
 	 */
 	void set_target_torque(float torque);
 
-	void set_target_position(float position);
+	void set_target_angle_ps(float position);
 
 	void set_target_speed(float speed);
-
-	void set_direction(uint8_t direction);
 
 	void set_gear_ratio(float gear_ratio);
 
@@ -58,7 +56,7 @@ public:
 
 	/// @brief Sets the positive direction of the motor
 	/// @param direction Positive direction of motor (CW or CCW)
-	void setDirection(uint8_t direction);
+	void set_direction(uint8_t direction);
 
 	/// @brief Sets the control period of the motor PID loop
 	/// @param period
@@ -68,7 +66,7 @@ public:
 
 	float get_output_motor(void);
 
-	float get_target_position(void);
+	float get_target_angle_ps(void);
 
 	float get_target_speed(void);
 	/**
@@ -86,10 +84,9 @@ public:
 	/**
 	 * Set hardware PWM duty cycle
 	 *
-	 * @param		pwmPin hardware PWM pin to output signal
 	 * @param		pwmDuty bit resolution value of desired PWM duty cycle
 	 */
-	void _pwm_write_duty(uint8_t pwmPin, uint32_t pwmDuty);
+	void _pwm_write_duty(uint32_t pwmDuty);
 
 	void attach_encoder(std::unique_ptr<model_encoder> encoder)
 	{
@@ -112,26 +109,30 @@ public:
 	std::unique_ptr<model_sensor> _current_sensor;
 
 	// JOINT CONFIG.
-	boolean _is_circular_joint;
 	uint8_t _forward_dir;
+	float _gear_ratio;
+	float _angle_full_turn_es;
+	boolean _is_circular_joint;
 	float _max_angle_ps;
 	float _min_angle_ps;
-	float _gear_ratio;
+	float _max_angle_es;
+	float _min_angle_es;
+
+	// JOINT STATE
+	float _current_angle_es;
+	float _current_angle_ps;
 
 	uint8_t _motor_pwm_pin;
 	uint8_t _motor_dir_pin;
 	uint8_t _motor_fault_pin;
 
-	uint8_t _rotational_direction_motor;
 	float _motor_max_torque;
 	float _motor_max_speed;
 	float _motor_max_position;
 	float _motor_min_position;
-	float _current_angle_es;
-	float _angle_full_turn;
 
 	float _target_torque;
-	float _target_position;
+	float _target_angle_ps;
 	float _targetSpeed;
 
 	// PID parameters
@@ -190,7 +191,10 @@ public:
 	 * @param		pwmPin hardware PWM pin to setup
 	 * @param		pwmFreq desired hardware PWM frequency
 	 */
-	void _pwm_setup(uint8_t pwmPin, float pwmFreq);
+	void _pwm_setup(float pwmFreq);
+
+	float get_current_angle_es();
+	float get_current_angle_ps();
 };
 
 #endif

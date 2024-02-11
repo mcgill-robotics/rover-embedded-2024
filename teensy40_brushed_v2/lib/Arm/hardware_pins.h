@@ -47,4 +47,7 @@ const uint8_t LIM_3 = 11;
 const uint8_t LIM_4 = 12;
 const uint8_t LIM_5 = 22;
 const uint8_t LIM_6 = 23;
+
+const float wrist_pitch_max_angle = 30.0;
+const float wrist_pitch_min_angle = -30.0;
 #endif
