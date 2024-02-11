@@ -41,6 +41,7 @@ float cur3_voltage_buffer[MOVING_AVERAGE_SIZE] = {0};
 int cur1_voltage_buffer_idx = 0;
 int cur2_voltage_buffer_idx = 0;
 int cur3_voltage_buffer_idx = 0;
+
 float moving_average(float new_reading, float *buffer, int buffer_size, int *buffer_idx)
 {
     float sum = 0;
@@ -81,12 +82,11 @@ void setup()
     SerialUSB.begin(115200);
 
     std::unique_ptr<model_encoder> enc1 = std::make_unique<model_encoder>();
-    std::unique_ptr<model_sensor> cur1 = std::make_unique<model_sensor>();
-
     std::unique_ptr<model_encoder> enc2 = std::make_unique<model_encoder>();
-    std::unique_ptr<model_sensor> cur2 = std::make_unique<model_sensor>();
-
     std::unique_ptr<model_encoder> enc3 = std::make_unique<model_encoder>();
+
+    std::unique_ptr<model_sensor> cur1 = std::make_unique<model_sensor>();
+    std::unique_ptr<model_sensor> cur2 = std::make_unique<model_sensor>();
     std::unique_ptr<model_sensor> cur3 = std::make_unique<model_sensor>();
 
     // Initialize encoders
@@ -155,6 +155,7 @@ void setup()
                              DEBOUNCE_DELAY * 1000);
 
     // Initialize Motor
+    // nSLEEP is actually hardwired to 5V so not really necessary
     digitalWrite(nSLEEP1, HIGH);
     digitalWrite(DIRPIN1, HIGH);
     digitalWrite(nSLEEP2, HIGH);
@@ -162,6 +163,7 @@ void setup()
     digitalWrite(nSLEEP3, HIGH);
     digitalWrite(DIRPIN3, HIGH);
 
+    // Run Motor
     analogWrite(PWMPIN1, 40);
     analogWrite(PWMPIN2, 40);
     analogWrite(PWMPIN3, 40);
@@ -192,10 +194,10 @@ void brushed_board_loop()
     {
         mot1.set_target_position(pos);
         mot1.closed_loop_control_tick();
-        float enc1_angle = mot1._encoder->get_angle();
-        SerialUSB.printf("enc1_angle: %8.4f \n", enc1_angle);
+        float enc1_angle_multi = mot1._encoder->get_angle_multi();
+        SerialUSB.printf("enc1_angle_multi: %8.4f \n", enc1_angle_multi);
 
-        if (enc1_angle <= pos + tolerance && enc1_angle >= pos - tolerance && stage == 0)
+        if (enc1_angle_multi <= pos + tolerance && enc1_angle_multi >= pos - tolerance && stage == 0)
         {
             SerialUSB.println("Reached target position");
             // pos = -60;
@@ -313,21 +315,32 @@ void brushed_board_tester()
     SerialUSB.printf("cur1_voltage: %8.4f, cur2_voltage: %8.4f, cur3_voltage: %8.4f ",
                      smoothed_cur1_voltage, smoothed_cur2_voltage, smoothed_cur3_voltage);
 
-    // TEST ENCODER --------------------------------------------------------------------
-    // Channel 3 is conflicted, unused
+    // TEST ENCODER ------------------------------------------------------------------------------
+
+    // Channel 3 is conflicted, unused.
     mot1._encoder->poll_encoder_angle();
     mot2._encoder->poll_encoder_angle();
     // mot3._encoder->poll_encoder_angle();
-    float enc1_angle = mot1._encoder->get_angle();
-    float rel_angle = mot1._encoder->get_relative_angle();
-    float enc1_tick = mot1._encoder->_encoder->read();
 
-    // float enc2_angle = mot2._encoder->get_angle();
-    // float enc3_angle = mot3._encoder->get_angle();
-    SerialUSB.printf("enc1_angle: %8.4f, rel_angle: %8.4f, tick: %8.4f",
-                     enc1_angle, rel_angle, enc1_tick);
+    // Read encoder values.
+    float enc1_quad_enc_pos = mot1._encoder->_encoder->read();
+    float enc1_angle_single = mot1._encoder->get_angle_single();
+    float enc1_angle_multi = mot1._encoder->get_angle_multi();
+    float enc1_rev = mot1._encoder->_encoder->getRevolution();
+    float enc1_hold_rev = mot1._encoder->_encoder->getHoldRevolution();
 
-    if (enc1_angle <= 2881 && enc1_angle >= 2879)
+    // float enc2_quad_enc_pos = mot2._encoder->_encoder->read();
+    // float enc2_angle_single = mot2._encoder->get_angle_single();
+    // float enc2_angle_multi = mot2._encoder->get_angle_multi();
+    // float enc3_quad_enc_pos = mot3._encoder->_encoder->read();
+    // float enc3_angle_single = mot3._encoder->get_angle_single();
+    // float enc3_angle_multi = mot3._encoder->get_angle_multi();
+
+    SerialUSB.printf("enc1_angle_multi: %8.4f, enc1_angle_single: %8.4f, tick: %8.4f",
+                     enc1_angle_multi, enc1_angle_single, enc1_quad_enc_pos);
+    SerialUSB.printf("enc1_rev: %8.4f, enc1_hold_rev: %8.4f", enc1_rev, enc1_hold_rev);
+
+    if (enc1_angle_multi <= 2881 && enc1_angle_multi >= 2879)
     {
         SerialUSB.printf("\n2880 here^");
         analogWrite(PWMPIN1, 0);

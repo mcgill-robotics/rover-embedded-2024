@@ -103,6 +103,8 @@ public:
 
 	void closed_loop_control_tick();
 
+	void set_angle_limit_ps(float max_angle, float min_angle);
+
 	// private:
 	// model_encoder *_encoder = nullptr;
 	// model_sensor *_current_sensor = nullptr;
@@ -112,7 +114,9 @@ public:
 	// JOINT CONFIG.
 	boolean _is_circular_joint;
 	uint8_t _forward_dir;
-
+	float _max_angle_ps;
+	float _min_angle_ps;
+	float _gear_ratio;
 
 	uint8_t _motor_pwm_pin;
 	uint8_t _motor_dir_pin;
@@ -131,14 +135,12 @@ public:
 	float _targetSpeed;
 
 	// PID parameters
+	PID *pid_instance;
 	float _output_motor;
 	float _ctrl_period;
 	float _sampling_period;
 
-	PID *pid_instance;
-
 	float _torque_constant_motor;
-	float _gear_ratio;
 
 	// TODO: Where are these values from? Are they the aggressive ones or normal ones?
 	const float _pi = 3.14159265358979;

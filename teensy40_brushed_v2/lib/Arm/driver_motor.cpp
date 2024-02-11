@@ -109,7 +109,7 @@ void driver_motor::closed_loop_control_tick()
 
 	// current_angle_es is the current angle after gear ratio translation
 	this->_encoder->poll_encoder_angle();
-	float current_angle_es = this->_encoder->get_angle();
+	float current_angle_es = this->_encoder->get_angle_multi();
 
 	// For later, diff can influence PID coefficients
 	float diff = setpoint_es - current_angle_es;
@@ -159,7 +159,7 @@ void driver_motor::closed_loop_control_tick()
 		{
 			set_direction(_forward_dir); // set direction to forwards
 		}
-		else // neg/
+		else // neg
 		{
 			set_direction(!_forward_dir); // set direction to backwards
 		}
@@ -253,6 +253,7 @@ void driver_motor::torque_control(float motor_cur)
 		_pwm_write_duty(_motor_pwm_pin, (uint32_t)_output_motor);
 	}
 }
+
 /// @brief Sets the positive direction of the motor
 /// @param direction new positive direction of the motor
 void driver_motor::setDirection(uint8_t direction)
@@ -306,4 +307,10 @@ void driver_motor::set_is_circular_joint(bool is_circular_joint)
 void driver_motor::set_forward_dir(uint8_t forward_dir)
 {
 	_forward_dir = forward_dir;
+}
+
+void driver_motor::set_angle_limit_ps(float max_angle, float min_angle)
+{
+	_max_angle_ps = max_angle;
+	_min_angle_ps = min_angle;
 }
