@@ -130,7 +130,7 @@ void setup()
     mot1.set_gear_ratio(2.0);
     mot1._is_circular_joint = true;
 
-    // Initialize Pins
+    // Initialize Pins (LEGACY CODE, NOT NECESSARY FOR DRIVER_MOTOR CLASS)
     // pinMode(PWMPIN1, OUTPUT);
     // pinMode(DIRPIN1, OUTPUT);
     // pinMode(nSLEEP1, OUTPUT);

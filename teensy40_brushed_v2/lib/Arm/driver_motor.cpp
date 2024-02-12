@@ -63,8 +63,8 @@ void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_p
 	// TODO: is this not necessary for pid?
 	//  _pwm_setup(_motor_pwm_pin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
 
-	// TODO: Including PID initialization here, potentially move later
-	pid_instance = new PID(0.1, 24, 0, 2.0, 0, 0); // TODO: all arguments are arbitrary...just trying to get it to work
+	// 24V motor therefore max is 24 and min is -24
+	pid_instance = new PID(0.1, 24, -24, 2.0, 0, 0);
 }
 
 /// @brief Sets the torque and writes the PWM value to the motor
@@ -154,7 +154,7 @@ void driver_motor::closed_loop_control_tick()
 		// Backwards
 		if (backward_distance < forward_distance - 10.0) // TODO: handle hysterics? 10.0 was used previously
 		{
-			set_direction(!_forward_dir); // set direction to backwards
+			// set_direction(!_forward_dir); // set direction to backwards
 			if (setpoint_es < angle_multi_es)
 			{
 				pid_output = pid_instance->calculate(setpoint_es, angle_multi_es);
@@ -167,7 +167,7 @@ void driver_motor::closed_loop_control_tick()
 		// Forwards
 		else
 		{
-			set_direction(_forward_dir); // set direction to forwards
+			// set_direction(_forward_dir); // set direction to forwards
 			if (setpoint_es > angle_multi_es)
 			{
 				pid_output = pid_instance->calculate(setpoint_es, angle_multi_es);
@@ -178,25 +178,24 @@ void driver_motor::closed_loop_control_tick()
 			}
 		}
 	}
-
-	// Linear joint
-	else
+	else // linear joint
 	{
-		if (diff > 0) // pos
-		{
-			set_direction(_forward_dir); // set direction to forwards
-		}
-		else // neg
-		{
-			set_direction(!_forward_dir); // set direction to backwards
-		}
-
 		pid_output = pid_instance->calculate(setpoint_es, angle_multi_es);
+	}
+
+	// Set direction
+	if (pid_output > 0) // pos
+	{
+		set_direction(_forward_dir); // set direction to forwards
+	}
+	else // neg
+	{
+		set_direction(!_forward_dir); // set direction to backwards
 	}
 
 	// Output to motor
 	// 255 is the max PWM value, 24 is the max voltage
-	float pwm_output = pid_output * 255.0 / 24.0;
+	float pwm_output = abs(pid_output) * 255.0 / 24.0;
 
 	this->_pwm_write_duty(pwm_output);
 	return;

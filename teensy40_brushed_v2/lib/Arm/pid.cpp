@@ -23,6 +23,7 @@
 #ifndef _PID_SOURCE_
 #define _PID_SOURCE_
 
+#include <Arduino.h>
 #include <iostream>
 #include <cmath>
 #include "pid.h"
@@ -83,6 +84,7 @@ PIDImpl::PIDImpl(double dt, double max, double min, double Kp, double Kd, double
 
 double PIDImpl::calculate(double setpoint, double pv)
 {
+    Serial.printf("setpoint: %f, pv: %f, ", setpoint, pv);
 
     // Calculate error
     double error = setpoint - pv;
@@ -100,6 +102,7 @@ double PIDImpl::calculate(double setpoint, double pv)
 
     // Calculate total output
     double output = Pout + Iout + Dout;
+    Serial.printf("Pout: %f, Iout: %f, Dout: %f, temp_output: %f, ", Pout, Iout, Dout, output);
 
     // Restrict to max/min
     if (output > _max)
@@ -109,7 +112,7 @@ double PIDImpl::calculate(double setpoint, double pv)
 
     // Save error to previous error
     _pre_error = error;
-
+    Serial.printf("output: %f\n", output);
     return output;
 }
 
