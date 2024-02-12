@@ -1,48 +1,64 @@
 #include <Arduino.h>
-
-#include "AMT22.h"
 #include <SPI.h>
 #include <EEPROM.h>
-#include "rover_arm.h"
+#include "AMT22.h"     // Assuming this is your custom library for the AMT22 encoder.
+#include "rover_arm.h" // Make sure this contains necessary definitions for your project.
 
 #define MIN_ADC_VALUE 0
 #define MAX_ADC_VALUE 4095
+#define POLL_DELAY_MS 1000
 
-float waist_angle = 0;
-float shoulder_angle = 0;
-float elbow_angle = 0;
-
-float map_float(float x, float in_min, float in_max, float out_min, float out_max)
+struct Joint
 {
-  double result = ((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+  float angle_continuous;
+  int error;
+};
 
-  return result;
+Joint waist, shoulder, elbow;
+
+float mapFloat(float x, float inMin, float inMax, float outMin, float outMax)
+{
+  return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+}
+
+void read_joint_angle(Joint &joint, uint8_t CS_pin)
+{
+  int16_t resultArr[2];
+  int error = getTurnCounterSPI(resultArr, CS_pin, 12);
+
+  if (error == -1)
+  {
+    joint.error = error;
+  }
+  else
+  {
+    float angleRaw = mapFloat((float)resultArr[0], MIN_ADC_VALUE, MAX_ADC_VALUE, 0, 359.99f);
+    float turns = resultArr[1];
+    joint.angle_continuous = angleRaw + 360 * turns;
+    joint.error = 0;
+  }
 }
 
 void setup()
 {
-  // Initiate SPI bus.
+  Serial.begin(115200);
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV64);
   pinMode(CS1, OUTPUT);
+  pinMode(CS2, OUTPUT);
+  pinMode(CS3, OUTPUT);
 }
 
 void loop()
 {
-  int16_t result_arr[2];
-  int error = getTurnCounterSPI(result_arr, CS1, 12);
-  if (error == -1)
-  {
-    Serial.println("Error reading SPI.");
-  }
-  else
-  {
-    float angle_raw = map_float((float)result_arr[0], MIN_ADC_VALUE, MAX_ADC_VALUE, 0, 359.99f);
-    float turns = result_arr[1];
-    waist_angle = angle_raw + 360 * turns;
+  delay(POLL_DELAY_MS);
 
-    Serial.printf("Angle: %d, Turns: %d ", result_arr[0], result_arr[1]);
-    Serial.printf("Angle_continous: %f", waist_angle);
-    Serial.println();
-  }
+  read_joint_angle(waist, CS1);
+  read_joint_angle(shoulder, CS2);
+  read_joint_angle(elbow, CS3);
+
+  Serial.printf("Waist: %s, Shoulder: %s, Elbow: %s\n",
+                waist.error == -1 ? "Error" : String(waist.angle_continuous, 2).c_str(),
+                shoulder.error == -1 ? "Error" : String(shoulder.angle_continuous, 2).c_str(),
+                elbow.error == -1 ? "Error" : String(elbow.angle_continuous, 2).c_str());
 }
