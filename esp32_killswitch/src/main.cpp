@@ -44,15 +44,46 @@ const int retryDelay = 500;    // Delay between retries in milliseconds
 int microsBetweenReadings = 1000;
 int lastReadTime = 0;
 
+// Function prototype for non-blocking tone
+void update_tone();
+
+// Variables for non-blocking tone management
+unsigned long previous_millis = 0; // stores the last time the tone was updated
+const long tone_interval = 500;    // interval at which to play tone (milliseconds)
+volatile bool tone_state = false;  // state of the tone (on/off)
+
 // sends "ON" so RX will stop rover
 // done so function sits in ram instead of flash so its called faster
 void tx_send_stop_rover()
 {
   ESP_BT.println("ON"); // Send "ON" via Bluetooth
-  tone(BUZZER, 1000);
-  delay(500);
-  noTone(BUZZER);
-  delay(500);
+                        // Reset the tone management variables to start playing the tone
+  previous_millis = millis();
+  tone_state = true;
+}
+
+void update_tone()
+{
+  unsigned long current_millis = millis();
+
+  // Check if it's time to update the tone state
+  if (current_millis - previous_millis >= tone_interval)
+  {
+    // Save the last time you updated the tone
+    previous_millis = current_millis;
+
+    if (tone_state)
+    {
+      tone(buzzer, 200); // Start playing the tone
+    }
+    else
+    {
+      no_tone(buzzer); // Stop playing the tone
+    }
+
+    // Toggle the tone state for the next interval
+    tone_state = !tone_state;
+  }
 }
 
 void tx_setup()
@@ -100,6 +131,7 @@ void tx_loop()
   {
     ESP_BT.println("OFF"); // Send "OFF" via Bluetooth
   }
+  update_tone();
   delay(10);
 }
 
