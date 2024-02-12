@@ -15,13 +15,16 @@
 #define RADIO_MODE_RX 1
 
 // COMPILATION FLAGS
-#define RADIO_MODE RADIO_MODE_RX //toggle between rx and tx for transistor or reciever code
+#define RADIO_MODE RADIO_MODE_RX // toggle between rx and tx for transistor or reciever code
 
 // PIN DEFINITIONS
 const int BUTTON_PIN = 2;
 const int LED_PIN = 2;
 const int TRANSISTOR_PIN = 14;
-const int BUZZER=5;
+const int BUZZER = 5;
+
+// VARIABLES
+volatile bool rx_rover_is_stopped = false;
 
 // BLUETOOTH ------------------------------------------------------------------------------
 // BT: Bluetooth availabilty check
@@ -41,18 +44,32 @@ const int retryDelay = 500;    // Delay between retries in milliseconds
 int microsBetweenReadings = 1000;
 int lastReadTime = 0;
 
+// sends "ON" so RX will stop rover
+// done so function sits in ram instead of flash so its called faster
+void tx_send_stop_rover()
+{
+  ESP_BT.println("ON"); // Send "ON" via Bluetooth
+  tone(BUZZER, 1000);
+  delay(500);
+  noTone(BUZZER);
+  delay(500);
+}
+
 void tx_setup()
 {
-  pinMode(BUTTON_PIN, INPUT_PULLUP); //setting up the pins
+  // PIN SETUP
+  pinMode(BUTTON_PIN, INPUT_PULLUP); // setting up the pins
   pinMode(BUZZER, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), stopRover, RISING); //interrupt so we don't miss button being pressed, set to rising edge
+  // TODO shouldn't this be FALLING?
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), tx_send_stop_rover, RISING); // interrupt so we don't miss button being pressed, set to rising edge
+
   Serial.begin(115200);
 
   // Initialize Bluetooth with name ESP32_TX, true sets it as master
   ESP_BT.begin("ESP32_TX", true);
 
   int attempts = 0;
-  //attempt to connect and stop after failing 100 000 times
+  // attempt to connect and stop after failing 100 000 times
   while (!ESP_BT.connect(server_name) && attempts < maxRetries)
   {
     attempts++;
@@ -77,22 +94,13 @@ void tx_loop()
   Serial.println("Button state: " + String(button_state));
   if (button_state == HIGH)
   {
-    stopRover();
+    tx_send_stop_rover();
   }
   else
   {
     ESP_BT.println("OFF"); // Send "OFF" via Bluetooth
   }
   delay(10);
-}
-//sends "ON" so RX will stop rover
-//done so function sits in ram instead of flash so its called faster
-void IRAM_ATTR stopRover(){
-    ESP_BT.println("ON"); // Send "ON" via Bluetooth
-    tone(BUZZER, 1000);
-    delay(500);
-    noTone(BUZZER);
-    delay(500);
 }
 
 void rx_setup()
@@ -109,59 +117,65 @@ void rx_setup()
   lastReadTime = micros();
 }
 
-void rx_loop(bool kill)
+void rx_loop(bool rx_rover_is_stopped)
 {
-    
-    if(ESP_BT.connected()){//check if connection is established with TX
-        if (ESP_BT.available()){                       // Check if data is available to read
-            String msg = ESP_BT.readStringUntil('\n'); // Read the incoming data
-            msg.trim();                                // Remove any whitespace
 
-            // Flip if necessary.
-            if (msg == "ON")
-            {
-                if(kill){ // if the rover is currently dead
-                    digitalWrite(LED_PIN, LOW);
-                    digitalWrite(TRANSISTOR_PIN, HIGH);
-                }
-                else{ //rover is currently running
-                    digitalWrite(LED_PIN, HIGH); // Turn the LED on
-                    digitalWrite(TRANSISTOR_PIN, LOW); //kill rover
-                    delay(250); //play confirmation noise
-                    tone(BUZZER, 85);
-                    delay(500);
-                    noTone(BUZZER);
-                    delay(250);
-                    Serial.println("SWITCH HIGH");
-                    kill=true; //toggle kill var to signal the fact that we have killed the rover
-                }
-            }
-            else if (!kill){//let rover run as we haven't killed the rover yet
-                digitalWrite(LED_PIN, LOW);
-                digitalWrite(TRANSISTOR_PIN, HIGH);
-            }
-            else{//kill rover
-                digitalWrite(LED_PIN, HIGH);
-                digitalWrite(TRANSISTOR_PIN, LOW);
-            }
+  if (ESP_BT.connected())
+  { // check if connection is established with TX
+    if (ESP_BT.available())
+    {                                            // Check if data is available to read
+      String msg = ESP_BT.readStringUntil('\n'); // Read the incoming data
+      msg.trim();                                // Remove any whitespace
+
+      // Flip if necessary.
+      if (msg == "ON")
+      {
+        if (rx_rover_is_stopped)
+        { // if the rover is currently dead
+          digitalWrite(LED_PIN, LOW);
+          digitalWrite(TRANSISTOR_PIN, HIGH);
+          rx_rover_is_stopped = false; // toggle kill var to signal the fact that we have started the rover
         }
-    }
-    else{//connection was lost/not established, so kill rover
+        else
+        {                                    // rover is currently running
+          digitalWrite(LED_PIN, HIGH);       // Turn the LED on
+          digitalWrite(TRANSISTOR_PIN, LOW); // kill rover
+          rx_rover_is_stopped = true;        // toggle kill var to signal the fact that we have killed the rover
+          tone(BUZZER, 85);
+          delay(500);
+          noTone(BUZZER);
+          delay(250);
+          // Print pins state
+          Serial.printf("LED: %d, TRANSISTOR: %d\n", digitalRead(LED_PIN), digitalRead(TRANSISTOR_PIN));
+        }
+      }
+      else if (!rx_rover_is_stopped)
+      { // let rover run as we haven't killed the rover yet
+        digitalWrite(LED_PIN, LOW);
+        digitalWrite(TRANSISTOR_PIN, HIGH);
+      }
+      else
+      { // kill rover
+        digitalWrite(LED_PIN, HIGH);
         digitalWrite(TRANSISTOR_PIN, LOW);
+      }
     }
+  }
+  else
+  { // connection was lost/not established, so kill rover
+    digitalWrite(TRANSISTOR_PIN, LOW);
+  }
 }
 
 void setup()
 {
-
-bool kill = false;
 #if DEBUG_MODE == 1
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
 #else // have tx setup or rx setup run depending on RADIO_MODE
-  if (RADIO_MODE == 0)
+  if (RADIO_MODE == RADIO_MODE_TX)
   {
-    tx_setup(); 
+    tx_setup();
   }
   else
   {
@@ -178,13 +192,13 @@ void loop()
   digitalWrite(LED_PIN, LOW);
   delay(1000);
 #else // have tx loop or rx loop run depending on RADIO_MODE
-  if (RADIO_MODE == 0)
+  if (RADIO_MODE == RADIO_MODE_TX)
   {
     tx_loop();
   }
   else
   {
-    rx_loop(kill);
+    rx_loop(rx_rover_is_stopped);
   }
 #endif
 }
