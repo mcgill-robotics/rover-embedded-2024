@@ -284,7 +284,7 @@ void lim1ISR()
     if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY_MS)
     {
         is_homed = true;
-        mot1._encoder->set_current_angle(wrist_pitch_max_angle * mot1._gear_ratio);
+        mot1._encoder->set_current_angle_es(wrist_pitch_max_angle * mot1._gear_ratio);
         SerialUSB.println("LIM_1 triggered");
         last_interrupt_time = interrupt_time;
         lim1_state = digitalRead(LIM_1);
@@ -299,7 +299,7 @@ void lim2ISR()
 
     if (interrupt_time - last_interrupt_time > DEBOUNCE_DELAY_MS)
     {
-        mot1._encoder->set_current_angle(wrist_pitch_min_angle * mot1._gear_ratio);
+        mot1._encoder->set_current_angle_es(wrist_pitch_min_angle * mot1._gear_ratio);
         SerialUSB.println("LIM_2 triggered");
         last_interrupt_time = interrupt_time;
         lim2_state = digitalRead(LIM_2);

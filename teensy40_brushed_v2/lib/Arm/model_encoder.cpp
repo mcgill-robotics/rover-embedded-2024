@@ -72,7 +72,7 @@ void model_encoder::reset_encoder()
     _encoder->init();
 }
 
-void model_encoder::set_current_angle(float current_angle)
+void model_encoder::set_current_angle_es(float current_angle)
 {
     Serial.printf("Setting as current: %f\n", current_angle);
     _offset = current_angle;

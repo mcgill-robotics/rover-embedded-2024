@@ -26,15 +26,13 @@ public:
 
     void reset_encoder(void);
 
-    void set_current_angle(float offset);
+    void set_current_angle_es(float offset);
 
     void poll_encoder_angle(void);
 
     float get_angle_multi(void);
 
     float get_angle_single(void);
-
-    void set_current_as_angle(float angle);
 
     float get_full_angle_from_tick()
     {
