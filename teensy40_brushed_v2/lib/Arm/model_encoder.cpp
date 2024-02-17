@@ -102,12 +102,6 @@ float model_encoder::get_angle_single()
     return _angle_single;
 }
 
-void model_encoder::set_current_as_angle(float angle)
-{
-    _quad_enc_pos = angle * (_resolution / 360.0);
-    _encoder->write(_quad_enc_pos);
-}
-
 void model_encoder::set_parameters(uint8_t direction, float offset, float resolution)
 {
     if (direction)
