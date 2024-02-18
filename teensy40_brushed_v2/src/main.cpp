@@ -5,14 +5,28 @@
 #include "model_sensor.h"
 #include "motor.h"
 
+#include "ros.h"
+#include "std_msgs/Float32.h"
+#include "std_msgs/Float32MultiArray.h"
+
 #include <memory>
 
 // CONFIGURATION
-#define BRUSHED_BOARD_TEST 3
+#define BRUSHED_BOARD_TEST 4
 #define PID_PERIOD_MS 100
 
 #define OUTA_Pin ENCPIN1_1
 #define OUTB_Pin ENCPIN1_2
+
+// ROS
+ros::NodeHandle nh;
+float arm_brushed_setpoint_ps[3] = {0, 0, 0};
+float arm_brushed_angle_ps[3] = {0, 0, 0};
+void brushed_board_ros_loop();
+void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
+std_msgs::Float32MultiArray arm_brushed_fb_msg;
+ros::Publisher arm_brushed_fb_pub("armBrushedFB", &arm_brushed_fb_msg);
+ros::Subscriber<std_msgs::Float32MultiArray> arm_brushed_cmd_sub("armBrushedCmd", arm_brushed_cmd_cb);
 
 // DUMB POINTERS
 driver_motor mot1;
@@ -31,7 +45,7 @@ void print_encoder_info();
 void brushed_board_homing();
 void brushed_board_loop();
 void brushed_board_dir_tester();
-void brushed_board_setpoint_tester();
+void brushed_board_singe_setpoint_loop();
 
 void lim1ISR();
 void lim2ISR();
@@ -86,9 +100,20 @@ volatile bool lim6_state = false;
 
 void setup()
 {
-    SerialUSB.begin(115200);
+    #if BRUSHED_BOARD_TEST == 4
+    // Initialize ROS
+    nh.initNode();
+    nh.advertise(arm_brushed_fb_pub);
+    nh.subscribe(arm_brushed_cmd_sub);
+    arm_brushed_fb_msg.data_length = 3;
+    arm_brushed_fb_msg.data = arm_brushed_angle_ps;
+#endif
 
+    // Initialize Serial
+#if BRUSHED_BOARD_TEST != 4
+    SerialUSB.begin(115200);
     SerialUSB.println("CONFIGURING BRUSHED BOARD");
+#endif
 
     std::unique_ptr<model_encoder> enc1 = std::make_unique<model_encoder>();
     std::unique_ptr<model_encoder> enc2 = std::make_unique<model_encoder>();
@@ -114,7 +139,7 @@ void setup()
     // Initialize motors
     mot1.attach_encoder(std::move(enc1));
     mot2.attach_encoder(std::move(enc2));
-    mot3.attach_encoder(std::move(enc3));
+    // mot3.attach_encoder(std::move(enc3));
 
     mot1.attach_current_sensor(std::move(cur1));
     mot2.attach_current_sensor(std::move(cur2));
@@ -129,20 +154,6 @@ void setup()
     mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1.set_gear_ratio(2.0);
     mot1._is_circular_joint = true;
-
-    // Initialize Pins (LEGACY CODE, NOT NECESSARY FOR DRIVER_MOTOR CLASS)
-    // pinMode(PWMPIN1, OUTPUT);
-    // pinMode(DIRPIN1, OUTPUT);
-    // pinMode(nSLEEP1, OUTPUT);
-    // pinMode(PWMPIN2, OUTPUT);
-    // pinMode(DIRPIN2, OUTPUT);
-    // pinMode(nSLEEP2, OUTPUT);
-    // pinMode(PWMPIN3, OUTPUT);
-    // pinMode(DIRPIN3, OUTPUT);
-    // pinMode(nSLEEP3, OUTPUT);
-
-    // pinMode(ENCPIN3_1, INPUT);
-    // pinMode(ENCPIN3_2, INPUT);
 
     // Limit Switches
     pinMode(LIM_1, INPUT);
@@ -177,14 +188,18 @@ void setup()
 
     // Modelling
     current_rotation = Rotation2d::getRotationFromDeg(0);
+#if BRUSHED_BOARD_TEST != 4
     SerialUSB.println("DONE CONFIGURING BRUSHED BOARD");
 
     // HOMING
     SerialUSB.println("HOMING");
+#endif
     brushed_board_homing();
     while (!is_homed)
         ;
+#if BRUSHED_BOARD_TEST != 4
     SerialUSB.println("DONE HOMING");
+#endif
 }
 
 void loop()
@@ -195,7 +210,9 @@ void loop()
     brushed_board_dir_tester();
 #elif BRUSHED_BOARD_TEST == 3
     process_serial_cmd();
-    brushed_board_setpoint_tester();
+    brushed_board_singe_setpoint_loop();
+#elif BRUSHED_BOARD_TEST == 4
+    brushed_board_ros_loop();
 #endif
 }
 
@@ -361,8 +378,12 @@ void lim6ISR()
 // HOMING SEQUENCE, go forward until limit switch is triggered
 void brushed_board_homing()
 {
-    mot1.set_direction(mot1._forward_dir);
-    mot1._pwm_write_duty(40);
+    // Only do homing for linear joints
+    if (!mot1._is_circular_joint)
+    {
+        mot1.set_direction(mot1._forward_dir);
+        mot1._pwm_write_duty(40);
+    }
 }
 
 // PRINT ENCODER INFO
@@ -502,7 +523,7 @@ void brushed_board_dir_tester()
     // SerialUSB.println(counter);
 }
 
-void brushed_board_setpoint_tester()
+void brushed_board_singe_setpoint_loop()
 {
     delay(PID_PERIOD_MS);
 
@@ -510,4 +531,31 @@ void brushed_board_setpoint_tester()
 
     // Print Encoder Info
     print_encoder_info();
+}
+
+void brushed_board_ros_loop()
+{
+    delay(PID_PERIOD_MS);
+
+    mot1.closed_loop_control_tick();
+    mot2.closed_loop_control_tick();
+    mot3.closed_loop_control_tick();
+
+    // Feedback
+    arm_brushed_angle_ps[0] = mot1.get_current_angle_ps();
+    arm_brushed_angle_ps[1] = mot2.get_current_angle_ps();
+    arm_brushed_angle_ps[2] = mot3.get_current_angle_ps();
+    arm_brushed_fb_pub.publish(&arm_brushed_fb_msg);
+
+    nh.spinOnce();
+}
+
+void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
+{
+    arm_brushed_setpoint_ps[0] = input_msg.data[0];
+    arm_brushed_setpoint_ps[1] = input_msg.data[1];
+    arm_brushed_setpoint_ps[2] = input_msg.data[2];
+    mot1.set_target_angle_ps(arm_brushed_setpoint_ps[0]);
+    mot2.set_target_angle_ps(arm_brushed_setpoint_ps[1]);
+    mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
 }
