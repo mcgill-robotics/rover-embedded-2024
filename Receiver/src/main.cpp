@@ -1,8 +1,10 @@
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
+#include <iostream>
+#include <array>
 
-RF24 radio(7, 8); // CE, CSN 
+RF24 radio(7, 8); // CE, CSN
 const byte address[6] = "00001";
 
 void setup()
@@ -16,19 +18,13 @@ void setup()
 
 void loop()
 {
+  // Serial.print("Loop");
   if (radio.available())
   {
-    int text[8];
-    radio.read(&text, sizeof(text)); //NRF receives array of 8 integers
-
-    String output_int = "";
-
-    // Concatenate each element of the array to the string
-    for (int i = 0; i < sizeof(text) / sizeof(text[0]); ++i) {
-        output_int += String(text[i]) + " ";
-    }
-
-    // prints 8 integers: 4 for pH value, 4 for moisture value
-    Serial.println(output_int);
-    }
+    char combinedCString[32] = "";
+    radio.read(&combinedCString, sizeof(combinedCString));
+    // std::cout<<combinedCString;
+    Serial.print("Loop\r\n");
+    Serial.println(combinedCString);
+  }
 }
