@@ -5,7 +5,7 @@
 #include "model_sensor.h"
 #include "motor.h"
 
-#include "ros.h"
+#include <ros.h>
 #include "std_msgs/Float32.h"
 #include "std_msgs/Float32MultiArray.h"
 
@@ -44,7 +44,7 @@ int tolerance = 0.5;
 volatile boolean is_homed = false;
 
 // FUNCTION DECLARATIONS
-void brushed_board_homing();
+//void brushed_board_homing();
 void brushed_board_ros_loop();
 
 void lim1ISR();
@@ -188,7 +188,7 @@ void setup()
     // Modelling
     current_rotation = Rotation2d::getRotationFromDeg(0);
 
-    brushed_board_homing();
+    //brushed_board_homing();
     // while (!is_homed)
     //     ;
     loop_last_time = micros();
@@ -277,15 +277,15 @@ void lim6ISR()
 }
 
 // HOMING SEQUENCE, go forward until limit switch is triggered
-void brushed_board_homing()
-{
-    // Only do homing for linear joints
-    if (!mot1._is_circular_joint)
-    {
-        mot1.set_direction(mot1._forward_dir);
-        mot1._pwm_write_duty(40);
-    }
-}
+// void brushed_board_homing()
+// {
+//     // Only do homing for linear joints
+//     if (!mot1._is_circular_joint)
+//     {
+//         mot1.set_direction(mot1._forward_dir);
+//         mot1._pwm_write_duty(40);
+//     }
+// }
 void brushed_board_ros_loop()
 {
     // delay(PID_PERIOD_MS);
@@ -296,19 +296,21 @@ void brushed_board_ros_loop()
         counter = current_time;
         mot1.closed_loop_control_tick();
         mot2.closed_loop_control_tick();
-        mot3.closed_loop_control_tick();
+        //mot3.closed_loop_control_tick();
         loop_last_time = current_time;
     }
 
     // Feedback
     arm_brushed_fb_msg.data_length = 3;
-    arm_brushed_fb_msg.data = arm_brushed_angle_ps;
     arm_brushed_angle_ps[0] = mot1.get_current_angle_ps();
     arm_brushed_angle_ps[1] = mot2.get_current_angle_ps();
-    arm_brushed_angle_ps[2] = mot3.get_current_angle_ps();
+    //arm_brushed_angle_ps[2] = mot3.get_current_angle_ps();
+    arm_brushed_angle_ps[2] = 0.0;
+    arm_brushed_fb_msg.data = arm_brushed_angle_ps;
     arm_brushed_fb_pub.publish(&arm_brushed_fb_msg);
 
     nh.spinOnce();
+    delay(1);
 }
 
 void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
