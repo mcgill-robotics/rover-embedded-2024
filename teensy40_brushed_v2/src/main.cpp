@@ -12,7 +12,11 @@
 #include <memory>
 
 // CONFIGURATION
-#define BRUSHED_BOARD_TEST 4
+#define CONFIG_NON_ROS 1
+#define CONFIG_DIR_TESTER 2
+#define CONFIG_SINGLE_MOTOR_TESTER 3
+#define CONFIG_ROS 4
+#define BRUSHED_BOARD_CONFIG CONFIG_ROS
 #define PID_PERIOD_MS 100
 
 #define OUTA_Pin ENCPIN1_1
@@ -100,7 +104,7 @@ volatile bool lim6_state = false;
 
 void setup()
 {
-    #if BRUSHED_BOARD_TEST == 4
+#if BRUSHED_BOARD_CONFIG == 4
     // Initialize ROS
     nh.initNode();
     nh.advertise(arm_brushed_fb_pub);
@@ -110,7 +114,7 @@ void setup()
 #endif
 
     // Initialize Serial
-#if BRUSHED_BOARD_TEST != 4
+#if BRUSHED_BOARD_CONFIG != 4
     SerialUSB.begin(115200);
     SerialUSB.println("CONFIGURING BRUSHED BOARD");
 #endif
@@ -188,7 +192,7 @@ void setup()
 
     // Modelling
     current_rotation = Rotation2d::getRotationFromDeg(0);
-#if BRUSHED_BOARD_TEST != 4
+#if BRUSHED_BOARD_CONFIG != 4
     SerialUSB.println("DONE CONFIGURING BRUSHED BOARD");
 
     // HOMING
@@ -197,21 +201,21 @@ void setup()
     brushed_board_homing();
     while (!is_homed)
         ;
-#if BRUSHED_BOARD_TEST != 4
+#if BRUSHED_BOARD_CONFIG != 4
     SerialUSB.println("DONE HOMING");
 #endif
 }
 
 void loop()
 {
-#if BRUSHED_BOARD_TEST == 1
+#if BRUSHED_BOARD_CONFIG == 1
     brushed_board_loop();
-#elif BRUSHED_BOARD_TEST == 2
+#elif BRUSHED_BOARD_CONFIG == 2
     brushed_board_dir_tester();
-#elif BRUSHED_BOARD_TEST == 3
+#elif BRUSHED_BOARD_CONFIG == 3
     process_serial_cmd();
     brushed_board_singe_setpoint_loop();
-#elif BRUSHED_BOARD_TEST == 4
+#elif BRUSHED_BOARD_CONFIG == 4
     brushed_board_ros_loop();
 #endif
 }
