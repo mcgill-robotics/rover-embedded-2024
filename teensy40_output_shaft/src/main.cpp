@@ -14,17 +14,17 @@ struct Joint
   int error;
 };
 
-Joint waist, shoulder, elbow;
+Joint elbow, shoulder, waist;
 
 float mapFloat(float x, float inMin, float inMax, float outMin, float outMax)
 {
   return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
 
-void read_joint_angle(Joint &joint, uint8_t CS_pin)
+void read_joint_angle_multi(Joint &joint, uint8_t CS_pin)
 {
-  int16_t resultArr[2];
-  int error = getTurnCounterSPI(resultArr, CS_pin, 12);
+  int16_t result_arr[2];
+  int error = getTurnCounterSPI(result_arr, CS_pin, 12);
 
   if (error == -1)
   {
@@ -32,9 +32,9 @@ void read_joint_angle(Joint &joint, uint8_t CS_pin)
   }
   else
   {
-    float angleRaw = mapFloat((float)resultArr[0], MIN_ADC_VALUE, MAX_ADC_VALUE, 0, 359.99f);
-    float turns = resultArr[1];
-    joint.angle_continuous = angleRaw + 360 * turns;
+    float angle_deg = mapFloat((float)result_arr[0], MIN_ADC_VALUE, MAX_ADC_VALUE, 0, 359.99f);
+    float turns = result_arr[1];
+    joint.angle_continuous = angle_deg + 360 * turns;
     joint.error = 0;
   }
 }
@@ -53,12 +53,12 @@ void loop()
 {
   delay(POLL_DELAY_MS);
 
-  read_joint_angle(waist, CS1);
-  read_joint_angle(shoulder, CS2);
-  read_joint_angle(elbow, CS3);
+  read_joint_angle_multi(elbow, CS1);
+  read_joint_angle_multi(shoulder, CS2);
+  read_joint_angle_multi(waist, CS3);
 
-  Serial.printf("Waist: %s, Shoulder: %s, Elbow: %s\n",
-                waist.error == -1 ? "Error" : String(waist.angle_continuous, 2).c_str(),
+  Serial.printf("Elbow: %s, Shoulder: %s, Waist: %s\n",
+                elbow.error == -1 ? "Error" : String(elbow.angle_continuous, 2).c_str(),
                 shoulder.error == -1 ? "Error" : String(shoulder.angle_continuous, 2).c_str(),
-                elbow.error == -1 ? "Error" : String(elbow.angle_continuous, 2).c_str());
+                waist.error == -1 ? "Error" : String(waist.angle_continuous, 2).c_str());
 }
