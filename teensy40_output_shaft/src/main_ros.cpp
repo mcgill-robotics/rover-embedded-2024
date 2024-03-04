@@ -9,7 +9,7 @@
 
 #define MIN_ADC_VALUE 0
 #define MAX_ADC_VALUE 4095
-#define POLL_DELAY_MS 1000
+#define POLL_DELAY_MS 50
 
 struct Joint
 {
@@ -24,6 +24,7 @@ std_msgs::Float32MultiArray arm_brushless_fb_msg;
 ros::Publisher arm_brushless_fb_pub("armBrushlessFB", &arm_brushless_fb_msg);
 
 float arm_brushless_angle_ps[3] = {0, 0, 0};
+int last_time_ms = 0;
 
 float mapFloat(float x, float inMin, float inMax, float outMin, float outMax)
 {
@@ -82,22 +83,27 @@ void setup()
   pinMode(CS1, OUTPUT);
   pinMode(CS2, OUTPUT);
   pinMode(CS3, OUTPUT);
+
+  last_time_ms = millis();
 }
 
 void loop()
 {
   ros_loop();
 
-  delay(POLL_DELAY_MS);
-
-  read_joint_angle_multi(waist, CS1);
-  read_joint_angle_multi(shoulder, CS2);
-  read_joint_angle_multi(elbow, CS3);
+  if (millis() - last_time_ms > POLL_DELAY_MS)
+  {
+    read_joint_angle_multi(elbow, CS1);
+    read_joint_angle_multi(shoulder, CS2);
+    read_joint_angle_multi(waist, CS3);
+    last_time_ms = millis();
+  }
 
   arm_brushless_angle_ps[0] = elbow.error == -1 ? 0 : elbow.angle_continuous;
   arm_brushless_angle_ps[1] = shoulder.error == -1 ? 0 : shoulder.angle_continuous;
   arm_brushless_angle_ps[2] = waist.error == -1 ? 0 : waist.angle_continuous;
 
+  arm_brushless_fb_msg.data_length = 3;
   arm_brushless_fb_msg.data = arm_brushless_angle_ps;
   arm_brushless_fb_pub.publish(&arm_brushless_fb_msg);
 }
