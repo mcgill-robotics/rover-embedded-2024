@@ -19,6 +19,10 @@ struct Joint
 
 Joint elbow, shoulder, waist;
 
+float elbow_zero_offset_deg = 0;
+float shoulder_zero_offset_deg = 45.0;
+float waist_zero_offset_deg = 0;
+
 ros::NodeHandle nh;
 std_msgs::Float32MultiArray arm_brushless_fb_msg;
 ros::Publisher arm_brushless_fb_pub("armBrushlessFB", &arm_brushless_fb_msg);
@@ -49,11 +53,17 @@ void read_joint_angle_multi(Joint &joint, uint8_t CS_pin)
   }
 }
 
-float read_joint_angle_single(uint8_t CS_pin)
+void read_joint_angle_single(Joint &joint, uint8_t CS_pin)
 {
   uint16_t result;
   result = getPositionSPI(CS_pin, 12);
-  return mapFloat((float)result, MIN_ADC_VALUE, MAX_ADC_VALUE, 0, 359.99f);
+  if (result == 0xFFFF)
+  {
+    joint.error = -1;
+    return;
+  }
+  joint.angle_continuous = mapFloat((float)result, MIN_ADC_VALUE, MAX_ADC_VALUE, 0, 359.99f);
+  joint.error = 0;
 }
 
 void ros_setup()
@@ -85,6 +95,10 @@ void setup()
   pinMode(CS3, OUTPUT);
 
   last_time_ms = millis();
+
+  resetAMT22(CS1);
+  resetAMT22(CS2);
+  resetAMT22(CS3);
 }
 
 void loop()
@@ -93,15 +107,15 @@ void loop()
 
   if (millis() - last_time_ms > POLL_DELAY_MS)
   {
-    read_joint_angle_multi(elbow, CS1);
-    read_joint_angle_multi(shoulder, CS2);
-    read_joint_angle_multi(waist, CS3);
+    read_joint_angle_single(elbow, CS1);
+    read_joint_angle_single(shoulder, CS2);
+    read_joint_angle_single(waist, CS3);
     last_time_ms = millis();
   }
 
-  arm_brushless_angle_ps[0] = elbow.error == -1 ? 0 : elbow.angle_continuous;
-  arm_brushless_angle_ps[1] = shoulder.error == -1 ? 0 : shoulder.angle_continuous;
-  arm_brushless_angle_ps[2] = waist.error == -1 ? 0 : waist.angle_continuous;
+  arm_brushless_angle_ps[0] = elbow.error == -1 ? 0 : (elbow.angle_continuous - elbow_zero_offset_deg);
+  arm_brushless_angle_ps[1] = shoulder.error == -1 ? 0 : (shoulder.angle_continuous - shoulder_zero_offset_deg);
+  arm_brushless_angle_ps[2] = waist.error == -1 ? 0 : (waist.angle_continuous - waist_zero_offset_deg);
 
   arm_brushless_fb_msg.data_length = 3;
   arm_brushless_fb_msg.data = arm_brushless_angle_ps;
