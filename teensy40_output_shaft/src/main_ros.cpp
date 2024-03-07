@@ -25,7 +25,7 @@ float waist_zero_offset_deg = 0;
 
 ros::NodeHandle nh;
 std_msgs::Float32MultiArray arm_brushless_fb_msg;
-ros::Publisher arm_brushless_fb_pub("armBrushlessFB", &arm_brushless_fb_msg);
+ros::Publisher arm_brushless_fb_pub("/armBrushlessFb", &arm_brushless_fb_msg);
 
 float arm_brushless_angle_ps[3] = {0, 0, 0};
 int last_time_ms = 0;
