@@ -35,50 +35,71 @@ void setup()  // setup for NRF
   lastTime = millis();
 }
 
-void dc_setup() { // setup for DC motors
+void dc_setup() { // setup for DC motors 0 and 1
   pinMode(pwm0,OUTPUT); 
   pinMode(dir0,OUTPUT); 
   pinMode(pwm1,OUTPUT); 
   pinMode(dir1,OUTPUT); 
 }
 
-void forward0() {  // DC motor turn CCW
-  int speed = 200;
+int dc_speed0 = 200;  //set speed of DC 0 and 1
+int dc_speed1 = 100;
+
+//control DC 0
+void dc_forward0() {  // DC motor turn CCW
   digitalWrite(dir0, HIGH);
-  analogWrite(pwm0, speed);
+  analogWrite(pwm0, dc_speed0);
 }
 
-void reverse0() {  // DC motor turn CW
-  int speed = 100;
+void dc_reverse0() {  // DC motor turn CW
   digitalWrite(dir0, LOW);
-  analogWrite(pwm0, speed);
+  analogWrite(pwm0, dc_speed0);
 }
 
-void brake0() {  // DC motor brake
+void dc_brake0() {  // DC motor brake
   analogWrite(pwm0, 0);
 }
 
-
-void forward1() {  
-  int speed = 200;
+//control DC 1
+void dc_forward1() {  
   digitalWrite(dir1, HIGH);
-  analogWrite(pwm1, speed);
+  analogWrite(pwm1, dc_speed1);
 }
 
-void reverse1() {  
-  int speed = 100;
+void dc_reverse1() {  
   digitalWrite(dir1, LOW);
-  analogWrite(pwm1, speed);
+  analogWrite(pwm1, dc_speed1);
 }
 
-void brake1() {  
+void dc_brake1() {  
   analogWrite(pwm1, 0);
 }
 
 
-void step_setup() {
+void step_setup() { //setup for stepper motor
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
+}
+
+void step_cw() {  //turn stepper CW
+  digitalWrite(dirPin, HIGH);
+}
+
+void step_ccw() { //turn stepper CCW
+  digitalWrite(dirPin, LOW);
+}
+
+void step_rotate() {   //rotate Stepper for a specified speed and number of revolutions/steps
+  int revolutions = 0.25; //controls revolutions: number of revolutions to rotate(0.25 for 90 degrees)
+  int delay_sec = 1000;   //controls speed: lower delay time is faster rotation speed
+  step_cw();            //set direction
+
+  for (int i = 0; i < revolutions * stepsPerRevolution; i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(delay_sec);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(delay_sec);
+  }
 }
 
 

@@ -19,8 +19,11 @@ const byte address[6] = "00001";
 
 // pH sensor(1)
 #define ph0 A2              // analog pin on teensy
-unsigned long int avgValue; // average of 10 milli volt readings
-int buf[10], temp;          // array of 10 milli volt readings
+#define ph1 A3
+unsigned long int avgValue0; // average of 10 milli volt readings
+unsigned long int avgValue1;
+int buf0[10], temp;          // array of 10 milli volt readings
+int buf1[10], temp;
 uint32_t lastTime = 0;
 
 float pH_data[] = {1.1, 2.2, 3.3, 4.4};
@@ -31,7 +34,8 @@ void update_pH_data()
     // pH
     for (int i = 0; i < 10; i++) // Get 10 sample value from the sensor for smooth the value
     {
-        buf[i] = analogRead(ph0);
+        buf0[i] = analogRead(ph0);
+        buf1[i] = analogRead(ph1);
         delay(10);
     }
 
@@ -39,31 +43,49 @@ void update_pH_data()
     {
         for (int j = i + 1; j < 10; j++)
         {
-            if (buf[i] > buf[j])
+            if (buf0[i] > buf0[j])
             {
-                temp = buf[i];
-                buf[i] = buf[j];
-                buf[j] = temp;
+                temp = buf0[i];
+                buf0[i] = buf0[j];
+                buf0[j] = temp;
+            }
+
+            if (buf1[i] > buf1[j])
+            {
+                temp = buf1[i];
+                buf1[i] = buf1[j];
+                buf1[j] = temp;
             }
         }
     }
 
-    avgValue = 0;
+    avgValue0 = 0;
+    avgValue1 = 0;
     for (int i = 2; i < 8; i++)
     { // take the average value of 6 center sample
-        avgValue += buf[i];
+        avgValue0 += buf0[i];
+        avgValue1 += buf1[i];
     }
-    avgValue = avgValue / 6;
+    avgValue0 = avgValue0 / 6;
+    avgValue1 = avgValue1 / 6;
 
-    float milVolt = (float)avgValue * (5.0 / 1023.0); // convert the analog reading into millivolt
-    float phValue = -7.4074 * milVolt + 22.8333333;   // convert the millivolt into pH value
+    float milVolt0 = (float)avgValue0 * (5.0 / 1023.0); // convert the analog reading into millivolt
+    float phValue0 = -7.4074 * milVolt0 + 22.8333333;   // convert the millivolt into pH value
+
+    float milVolt1 = (float)avgValue1 * (5.0 / 1023.0);
+    float phValue1 = -7.4074 * milVolt1 + 22.8333333; 
+
+    pH_data[0] = phValue0;
+    pH_data[1] = phValue1;
+    pH_data[2] = 0;
+    pH_data[3] = 0;
 
     // FOR DEBUG, REMOVE LATER (TODO)
     for (int i = 0; i < 3; i++)
     {
         // pH_data[i] = pH_data[i] % 7 + 0.1;
         // float mod
-        pH_data[i] = fmod(pH_data[i] + phValue + 0.1, 7);
+        pH_data[i] = fmod(pH_data[i] + phValue0 + 0.1, 7);
     }
 }
 
