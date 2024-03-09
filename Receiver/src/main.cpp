@@ -13,8 +13,8 @@ const byte address[6] = "00001";
 uint32_t lastTime = 0;
 
 //DC motors
-const int pwm0 = 2; // pwm 0-255 for speed
-const int dir0 = 3;  // dir high/low for direction
+const int pwm0 = 2;   // pwm: set to 0-255 for speed(255 is fastest)
+const int dir0 = 3;   // dir: set to high/low for direction
 const int pwm1 = 4; 
 const int dir1 = 5;  
 
@@ -42,21 +42,21 @@ void dc_setup() { // setup for DC motors 0 and 1
   pinMode(dir1,OUTPUT); 
 }
 
-int dc_speed0 = 200;  //set speed of DC 0 and 1
+int dc_speed0 = 200;  //set speed of DC motors 0 and 1
 int dc_speed1 = 100;
 
 //control DC 0
-void dc_forward0() {  // DC motor turn CCW
+void dc_forward0() {  // turn CCW: set dir0 to HIGH
   digitalWrite(dir0, HIGH);
   analogWrite(pwm0, dc_speed0);
 }
 
-void dc_reverse0() {  // DC motor turn CW
+void dc_reverse0() {  // turn CW: set dir0 to LOW
   digitalWrite(dir0, LOW);
   analogWrite(pwm0, dc_speed0);
 }
 
-void dc_brake0() {  // DC motor brake
+void dc_brake0() {  // brake: set pwm0 to 0
   analogWrite(pwm0, 0);
 }
 
@@ -81,25 +81,26 @@ void step_setup() { //setup for stepper motor
   pinMode(dirPin, OUTPUT);
 }
 
-void step_cw() {  //turn stepper CW
+void step_cw() {  //turn CW: set dirPin HIGH
   digitalWrite(dirPin, HIGH);
 }
 
-void step_ccw() { //turn stepper CCW
+void step_ccw() { //turn CCW: set dirPin LOW
   digitalWrite(dirPin, LOW);
 }
 
-void step_rotate() {   //rotate Stepper for a specified speed and number of revolutions/steps
-  int revolutions = 0.25; //controls revolutions: number of revolutions to rotate(0.25 for 90 degrees)
-  int delay_sec = 1000;   //controls speed: lower delay time is faster rotation speed
-  step_cw();            //set direction
+void step_rotate() {   
+  int revolutions = 0.25; //sets number of revolutions to rotate(0.25 for 90 degrees)
+  int delay_sec = 1000;   //controls speed: lower delay time is faster rotation
+  step_cw();            //set direction here
 
-  for (int i = 0; i < revolutions * stepsPerRevolution; i++) {
+  for (int i = 0; i < revolutions * stepsPerRevolution; i++) {  //rotate Stepper for given speed/revolutions
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(delay_sec);
     digitalWrite(stepPin, LOW);
     delayMicroseconds(delay_sec);
   }
+
 }
 
 
