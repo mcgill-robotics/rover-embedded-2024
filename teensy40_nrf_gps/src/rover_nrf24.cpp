@@ -111,7 +111,13 @@ void nrf24_loop(double *param)
     if (role)
     {
         // This device is a TX node
-        memcpy(payload.message, param, 2 * sizeof(double)); // set the payload message
+        Serial.println("hello");
+        Serial.println(*param);
+        Serial.println(*(param+1));
+        double result[2]={*param,*(param+1)};
+        //Serial.println("hello");
+        memcpy(payload.message, result, 2 * sizeof(double)); // set the payload message
+        Serial.println("bye");
         radio.stopListening();                // put radio in TX mode
         unsigned long start_timer = micros();                 // start the timer
         bool report = radio.write(&payload, sizeof(payload)); // transmit & save the report

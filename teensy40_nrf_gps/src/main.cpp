@@ -31,9 +31,9 @@ void setup()
 
 void loop()
 {
-  double result[2]={0,0};
-  double *ptr=result;
+  //double result[2]={0,0};
+  //double *ptr=result;
   //Serial.println(result[0]);
-  ptr=gps_loop();
-  nrf24_loop(result);
+  double *ptr=gps_loop();
+  nrf24_loop(gps_loop());
 }
