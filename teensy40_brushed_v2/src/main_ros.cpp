@@ -129,7 +129,8 @@ void setup()
     // 43000 clicks for wrist pitch, 32580 for wrist roll
     // Only using 1 & 2 becase 1 & 3 conflicts
     // Could be 32768 since it's a power of 2
-    enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
+    //enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
+    enc1->initialize_encoder(0, 0, 43000, 2);
     enc2->initialize_encoder(0, 0, 43000, 2);
     // enc3->initialize_encoder(0, 0, 43000, 3);
 
