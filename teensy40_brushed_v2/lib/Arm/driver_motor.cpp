@@ -86,7 +86,18 @@ float driver_motor::get_output_motor(void)
 
 void driver_motor::set_target_angle_ps(float angle_ps)
 {
-	_target_angle_ps = angle_ps;
+	if (angle_ps > _max_angle_ps)
+	{
+		_target_angle_ps = _max_angle_ps;
+	}
+	else if (angle_ps < _min_angle_ps)
+	{
+		_target_angle_ps = _min_angle_ps;
+	}
+	else
+	{
+		_target_angle_ps = angle_ps;
+	}
 }
 
 float driver_motor::get_target_angle_ps(void)
