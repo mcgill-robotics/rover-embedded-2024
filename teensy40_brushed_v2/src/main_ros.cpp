@@ -153,8 +153,8 @@ void setup()
     mot3.initialize_motor(1, PWMPIN3, DIRPIN3, nSLEEP3, 5.0, 0.0);
 
     // Set motor configuration after initialization
-    mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1.set_gear_ratio(2.0);
+    mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1._is_circular_joint = false;
 
     // Limit Switches
