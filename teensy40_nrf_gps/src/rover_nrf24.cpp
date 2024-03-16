@@ -32,7 +32,7 @@ bool role = false; // true = TX role, false = RX role
 // Make a data structure to store the entire payload of different datatypes
 struct PayloadStruct
 {
-    char message[7]; // only using 6 characters for TX & ACK payloads
+    double message[2]; // only using 6 characters for TX & ACK payloads
     uint8_t counter;
 };
 PayloadStruct payload;
@@ -106,12 +106,13 @@ void nrf24_setup()
     // radio.printPrettyDetails(); // (larger) function that prints human readable data
 }
 
-void nrf24_loop()
+void nrf24_loop(double *param)
 {
     if (role)
     {
         // This device is a TX node
-
+        memcpy(payload.message, param, 2 * sizeof(double)); // set the payload message
+        radio.stopListening();                // put radio in TX mode
         unsigned long start_timer = micros();                 // start the timer
         bool report = radio.write(&payload, sizeof(payload)); // transmit & save the report
         unsigned long end_timer = micros();                   // end the timer
@@ -122,7 +123,8 @@ void nrf24_loop()
             Serial.print(F("Time to transmit = "));
             Serial.print(end_timer - start_timer); // print the timer result
             Serial.print(F(" us. Sent: "));
-            Serial.print(payload.message); // print the outgoing message
+            Serial.print(payload.message[0]); // print the outgoing message
+            Serial.print(payload.message[1]); // print the outgoing message
             Serial.print(payload.counter); // print the outgoing counter
             uint8_t pipe;
             if (radio.available(&pipe))
@@ -134,7 +136,8 @@ void nrf24_loop()
                 Serial.print(F(" bytes on pipe "));
                 Serial.print(pipe); // print pipe number that received the ACK
                 Serial.print(F(": "));
-                Serial.print(received.message);   // print incoming message
+                Serial.print(received.message[0]);   // print incoming message
+                Serial.print(received.message[1]);   // print incoming message
                 Serial.println(received.counter); // print incoming counter
 
                 // save incoming counter & increment for next outgoing
@@ -168,10 +171,12 @@ void nrf24_loop()
             Serial.print(F(" bytes on pipe "));
             Serial.print(pipe); // print the pipe number
             Serial.print(F(": "));
-            Serial.print(received.message); // print incoming message
+            Serial.print(received.message[0]); // print incoming message
+            Serial.print(received.message[1]); // print incoming message
             Serial.print(received.counter); // print incoming counter
             Serial.print(F(" Sent: "));
-            Serial.print(payload.message);   // print outgoing message
+            Serial.print(payload.message[0]);   // print outgoing message
+            Serial.print(payload.message[1]);   // print outgoing message
             Serial.println(payload.counter); // print outgoing counter
 
             // save incoming counter & increment for next outgoing
@@ -193,7 +198,7 @@ void nrf24_loop()
             role = true;
             Serial.println(F("*** CHANGING TO TRANSMIT ROLE -- PRESS 'R' TO SWITCH BACK"));
 
-            memcpy(payload.message, "Hello ", 6); // change payload message
+            //memcpy(payload.message, "Hello ", 6); // change payload message
             radio.stopListening();                // this also discards any unused ACK payloads
         }
         else if (c == 'R' && role)
@@ -202,7 +207,7 @@ void nrf24_loop()
 
             role = false;
             Serial.println(F("*** CHANGING TO RECEIVE ROLE -- PRESS 'T' TO SWITCH BACK"));
-            memcpy(payload.message, "World ", 6); // change payload message
+            //memcpy(payload.message, "World ", 6); // change payload message
 
             // load the payload for the first received transmission on pipe 0
             radio.writeAckPayload(1, &payload, sizeof(payload));

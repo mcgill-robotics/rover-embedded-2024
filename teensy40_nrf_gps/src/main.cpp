@@ -8,10 +8,10 @@
    4800-baud serial GPS device hooked up on pins 4(rx) and 3(tx).
 */
 static const uint32_t GPSBaud = 9600;
-extern nrf24_setup();
-extern nrf24_loop();
+extern void nrf24_setup();
+extern void nrf24_loop(double *param);
 extern void gps_setup();
-extern void gps_loop();
+extern double* gps_loop();
 // The TinyGPSPlus object
 // TinyGPSPlus gps;
 // // The serial connection to the GPS device
@@ -31,6 +31,9 @@ void setup()
 
 void loop()
 {
-  gps_loop();
-  nrf24_loop();
+  double result[2]={0,0};
+  double *ptr=result;
+  //Serial.println(result[0]);
+  ptr=gps_loop();
+  nrf24_loop(result);
 }
