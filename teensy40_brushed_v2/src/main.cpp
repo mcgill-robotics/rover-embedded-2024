@@ -1,4 +1,4 @@
-#include "firmware_compile_cfg.h"
+#include "common.h"
 #if USE_ROS_FIRMWARE == 0
 #include <Arduino.h>
 #include "hardware_pins.h"
