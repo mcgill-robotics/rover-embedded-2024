@@ -193,6 +193,13 @@ public:
 	 */
 	void _pwm_setup(float pwmFreq);
 
+	/**
+	 * Manually move the motor forwards or backwards
+	 *
+	 * @param		speed in range -1 to 1
+	 */
+	void move_manual(uint32_t speed);
+
 	float get_current_angle_es();
 	float get_current_angle_ps();
 };

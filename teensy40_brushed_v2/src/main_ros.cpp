@@ -1,4 +1,4 @@
-#include "firmware_compile_cfg.h"
+#include "common.h"
 #if USE_ROS_FIRMWARE == 1
 #include <Arduino.h>
 #include "hardware_pins.h"
@@ -129,7 +129,7 @@ void setup()
     // 43000 clicks for wrist pitch, 32580 for wrist roll
     // Only using 1 & 2 becase 1 & 3 conflicts
     // Could be 32768 since it's a power of 2
-    //enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
+    // enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
     enc1->initialize_encoder(0, 0, 43000, 1);
     enc2->initialize_encoder(0, 0, 43000, 2);
     // enc3->initialize_encoder(0, 0, 43000, 3);
@@ -154,6 +154,7 @@ void setup()
     mot3.initialize_motor(1, PWMPIN3, DIRPIN3, nSLEEP3, 5.0, 0.0);
 
     // Set motor configuration after initialization
+    // Gear ratio needs to be set before angle limits so limits are scaled
     mot1.set_gear_ratio(2.0);
     mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1._is_circular_joint = false;
@@ -402,13 +403,6 @@ void print_encoder_info()
     // float enc1_rev = mot1._encoder->_encoder->getRevolution();
     // float enc1_hold_rev = mot1._encoder->_encoder->getHoldRevolution();
     // HWSERIAL.printf("enc1_rev: %8.4f, enc1_hold_rev: %8.4f, ", enc1_rev, enc1_hold_rev);
-    if (enc1_angle_es <= 2881 && enc1_angle_es >= 2879)
-    {
-        HWSERIAL.printf("\n2880 here^");
-        analogWrite(PWMPIN1, 0);
-        while (true)
-            ;
-    }
     HWSERIAL.println();
 }
 
@@ -453,6 +447,9 @@ void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
     arm_brushed_setpoint_ps[2] = input_msg.data[2];
     mot1.set_target_angle_ps(arm_brushed_setpoint_ps[0]);
     mot2.set_target_angle_ps(arm_brushed_setpoint_ps[1]);
-    mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
+
+    // Motor 3 is controlled like a forklift, only up and down, range -1 to 1
+    // mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
+    mot3.move_manual(arm_brushed_setpoint_ps[2]);
 }
 #endif // USE_ROS_FIRMWARE == 1
