@@ -159,6 +159,9 @@ void setup()
     mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1._is_circular_joint = false;
 
+    mot2.set_gear_ratio(2.0);
+    mot2._is_circular_joint = true;
+
     // Limit Switches
     pinMode(LIM_1, INPUT);
     pinMode(LIM_2, INPUT);
@@ -373,8 +376,8 @@ void print_encoder_info()
 
     // HWSERIAL.printf("cur1_current: %8.4f, cur2_current: %8.4f, cur3_current: %8.4f ",
     //                  cur1_current, cur2_current, cur3_current);
-    HWSERIAL.printf("cur1_voltage: %8.4f, cur2_voltage: %8.4f, cur3_voltage: %8.4f, ",
-                    smoothed_cur1_voltage, smoothed_cur2_voltage, smoothed_cur3_voltage);
+    // HWSERIAL.printf("cur1_voltage: %8.4f, cur2_voltage: %8.4f, cur3_voltage: %8.4f, ",
+    //                 smoothed_cur1_voltage, smoothed_cur2_voltage, smoothed_cur3_voltage);
 
     // TEST ENCODER ------------------------------------------------------------------------------
 
@@ -390,6 +393,12 @@ void print_encoder_info()
     float enc1_angle_ps = mot1.get_current_angle_ps();
     float enc1_setpoint = mot1.get_target_angle_ps();
 
+    float enc2_quad_enc_pos = mot2._encoder->_encoder->read();
+    float enc2_angle_single = mot2._encoder->get_angle_single();
+    float enc2_angle_es = mot2.get_current_angle_es();
+    float enc2_angle_ps = mot2.get_current_angle_ps();
+    float enc2_setpoint = mot2.get_target_angle_ps();
+
     // float enc2_quad_enc_pos = mot2._encoder->_encoder->read();
     // float enc2_angle_single = mot2._encoder->get_angle_single();
     // float enc2_angle_multi = mot2._encoder->get_angle_multi();
@@ -399,6 +408,9 @@ void print_encoder_info()
 
     HWSERIAL.printf("enc1_quad_enc_pos: %8.4f, enc1_angle_single: %8.4f, enc1_angle_es: %8.4f, enc1_angle_ps: %8.4f, enc1_setpoint: %8.4f, ",
                     enc1_quad_enc_pos, enc1_angle_single, enc1_angle_es, enc1_angle_ps, enc1_setpoint);
+    HWSERIAL.println();
+    HWSERIAL.printf("enc2_quad_enc_pos: %8.4f, enc2_angle_single: %8.4f, enc2_angle_es: %8.4f, enc2_angle_ps: %8.4f, enc2_setpoint: %8.4f, ",
+                    enc2_quad_enc_pos, enc2_angle_single, enc2_angle_es, enc2_angle_ps, enc2_setpoint);
 
     // float enc1_rev = mot1._encoder->_encoder->getRevolution();
     // float enc1_hold_rev = mot1._encoder->_encoder->getHoldRevolution();
@@ -442,11 +454,13 @@ void brushed_board_ros_loop()
 
 void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
-    arm_brushed_setpoint_ps[0] = input_msg.data[0];
+    // 0 is WP, 1 is WR, 2 is EE
+    arm_brushed_setpoint_ps[0] = input_msg.data[2];
     arm_brushed_setpoint_ps[1] = input_msg.data[1];
-    arm_brushed_setpoint_ps[2] = input_msg.data[2];
+    arm_brushed_setpoint_ps[2] = input_msg.data[0];
     mot1.set_target_angle_ps(arm_brushed_setpoint_ps[0]);
     mot2.set_target_angle_ps(arm_brushed_setpoint_ps[1]);
+    HWSERIAL.printf("WP: %8.4f, WR: %8.4f, EE: %8.4f\n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
 
     // Motor 3 is controlled like a forklift, only up and down, range -1 to 1
     // mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
