@@ -1,0 +1,300 @@
+IMPORTANT: 
+1. we used the same sensor board (from sensor #1) for testing each sensor probe (the board that connects the data collected by the probe, to the teensy, is in in the bag of each box) 
+2. pH sensor #1 may not have been initially tested with ph 7 first (like it says on the box), this may be why the millivolt readings are very different from the other sensors 
+PH SENSOR #1: (the sensor we first purchased and tested with random solutions)
+
+pH 7.00: 
+
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.15
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.15
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.15
+milliVolt readings:2.16
+milliVolt readings:2.16
+milliVolt readings:2.15
+milliVolt readings:2.15
+milliVolt readings:2.15
+milliVolt readings:2.16
+milliVolt readings:2.15
+
+pH 4.00: 
+
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.99
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.98
+milliVolt readings:2.99
+
+pH 10.00: 
+
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.31
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.31
+milliVolt readings:1.32
+milliVolt readings:1.32
+milliVolt readings:1.31
+milliVolt readings:1.31
+milliVolt readings:1.32
+
+PH SENSOR #2: 
+
+pH 7.00: 
+
+milliVolt readings:1.98
+milliVolt readings:1.97
+milliVolt readings:1.97
+milliVolt readings:1.97
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.97
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.97
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.97
+milliVolt readings:1.99
+milliVolt readings:1.98
+milliVolt readings:1.97
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.98
+milliVolt readings:1.98
+
+
+pH 4.00:
+
+milliVolt readings:2.82
+milliVolt readings:2.81
+milliVolt readings:2.81
+milliVolt readings:2.82
+milliVolt readings:2.81
+milliVolt readings:2.81
+milliVolt readings:2.82
+milliVolt readings:2.81
+milliVolt readings:2.81
+milliVolt readings:2.81
+milliVolt readings:2.82
+milliVolt readings:2.82
+milliVolt readings:2.82
+milliVolt readings:2.81
+milliVolt readings:2.82
+milliVolt readings:2.81
+
+
+pH 10.00: 
+
+milliVolt readings:1.19
+milliVolt readings:1.19
+milliVolt readings:1.19
+milliVolt readings:1.19
+milliVolt readings:1.20
+milliVolt readings:1.19
+milliVolt readings:1.19
+milliVolt readings:1.20
+milliVolt readings:1.19
+milliVolt readings:1.19
+milliVolt readings:1.20
+milliVolt readings:1.20
+milliVolt readings:1.20
+milliVolt readings:1.19
+milliVolt readings:1.20
+milliVolt readings:1.19
+milliVolt readings:1.20
+milliVolt readings:1.19
+milliVolt readings:1.20
+milliVolt readings:1.20
+
+PH SENSOR #3: 
+
+pH 7.00: 
+
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.02
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.02
+milliVolt readings:2.04
+milliVolt readings:2.02
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.02
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+milliVolt readings:2.03
+
+pH 4.00: 
+
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.87
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.87
+milliVolt readings:2.87
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.86
+milliVolt readings:2.86
+
+pH 10.00:
+
+milliVolt readings:1.25
+milliVolt readings:1.26
+milliVolt readings:1.26
+milliVolt readings:1.24
+milliVolt readings:1.27
+milliVolt readings:1.26
+milliVolt readings:1.25
+milliVolt readings:1.26
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.24
+milliVolt readings:1.24
+milliVolt readings:1.25
+milliVolt readings:1.26
+milliVolt readings:1.24
+milliVolt readings:1.26
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.25
+milliVolt readings:1.25
+
+PH SENSOR #4: 
+
+pH 7.00: 
+
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.97
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+milliVolt readings:1.96
+
+pH 4.00: 
+
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.78
+milliVolt readings:2.77
+milliVolt readings:2.78
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+milliVolt readings:2.77
+
+pH 10.00: 
+
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.22
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.22
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.21
+milliVolt readings:1.20
+milliVolt readings:1.21
+
