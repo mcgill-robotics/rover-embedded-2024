@@ -131,7 +131,7 @@ void setup()
     // Could be 32768 since it's a power of 2
     // enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
     enc1->initialize_encoder(0, 0, 43000, 1);
-    enc2->initialize_encoder(0, 0, 43000, 2);
+    enc2->initialize_encoder(0, 0, 32580, 2);
     // enc3->initialize_encoder(0, 0, 43000, 3);
 
     // Initialize current sensors
