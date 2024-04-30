@@ -17,32 +17,61 @@ const int pwm0 = 2;   // pwm: set to 0-255 for speed(255 is fastest)
 const int dir0 = 3;   // dir: set to high/low for direction
 const int pwm1 = 4; 
 const int dir1 = 5;  
+int dc_speed0 = 200;  //sets the speed of DC motors
+int dc_speed1 = 100;
 
 //stepper motor
 #define dirPin 9                //dirPin: set high or low for CW/CCW
 #define stepPin 10              //stepPin: write HIGH then LOW for 1 step
 #define stepsPerRevolution 200  //number of steps per a full revolution
+int revolutions = 0.25; //controls revolutions: revolutions is number of revolutions(0.25 for 90 degrees)
+int delay_sec = 1000;   //controls speed: lower delay time is faster rotation speed  
 
-void setup()  // setup for NRF
-{
+//geiger
+unsigned long counts; //variable for GM Tube events
+unsigned long previousMillis; //variable for measuring time
+unsigned long geiger_count;
+#define LOG_PERIOD 15000 // count rate
+
+
+void setup()  { 
   Serial.begin(9600);
+
+  //geiger
+  counts = 0;
+  Serial.begin(9600);
+  pinMode(6, INPUT);
+  attachInterrupt(digitalPinToInterrupt(3), impulse, FALLING); //define external interrupts
+  Serial.println("Start counter");
+
+  //nrf
   radio.begin();
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_HIGH);
   radio.startListening();
   lastTime = millis();
-}
 
-void dc_setup() { // setup for DC motors 0 and 1
+  //stepper
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
+  digitalWrite(dirPin, HIGH); //HIGH for cw, LOW for ccw
+
+  //dc
   pinMode(pwm0,OUTPUT); 
   pinMode(dir0,OUTPUT); 
   pinMode(pwm1,OUTPUT); 
   pinMode(dir1,OUTPUT); 
 }
 
- //sets the speed of DC motors
-int dc_speed0 = 200; 
-int dc_speed1 = 100;
+void impulse() { counts++;} //counter for geiger
+
+unsigned long geiger_loop() { //returns geiger count
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis > LOG_PERIOD) {
+    previousMillis = currentMillis;
+    return counts;
+    counts = 0; }
+}
 
 //control DC 0
 void dc_forward0() {  // rotate CCW: set dir0 to HIGH
@@ -70,24 +99,9 @@ void dc_brake1() {
   analogWrite(pwm1, 0);
 }
 
-//stepper motor
-void step_setup() { //setup for stepper motor
-  pinMode(stepPin, OUTPUT);
-  pinMode(dirPin, OUTPUT);
-}
-void step_cw() {  //turn CW: set dirPin HIGH
-  digitalWrite(dirPin, HIGH);
-}
-void step_ccw() { //turn CCW: set dirPin LOW
-  digitalWrite(dirPin, LOW);
-}
 
-//rotates the stepper 
+//rotates the stepper for "revolutions" amount of revolutions
 void step_rotate() {   
-  int revolutions = 0.25;   //revolutions sets number of revolutions to rotate(0.25 for 90 degrees)
-  int delay_sec = 1000;     //controls speed: lower delay time is faster rotation
-  step_cw();                //set direction: either step_cw() or step_ccw()
-
   for (int i = 0; i < revolutions * stepsPerRevolution; i++) {  //rotate Stepper for given speed/revolutions
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(delay_sec);
@@ -95,7 +109,6 @@ void step_rotate() {
     delayMicroseconds(delay_sec);
   }
 }
-
 
 
 void loop()
@@ -116,8 +129,13 @@ void loop()
       len = 255; // Ensure len does not exceed buffer size - 1 (for null terminator)
     radio.read(rx_buffer, len);
     rx_buffer[len] = '\0'; // Null-terminate the received string
-    Serial.println("Received:");
-    Serial.println(rx_buffer);
+
+    geiger_count = geiger_loop();   
+    Serial.printf("%lu, ", geiger_count); //prints geiger data
+    Serial.println(rx_buffer);            //prints moisture and pH data in format: "%d, %d, %d, %d, %.2f, %.2f, %.2f, %.2f"
     Serial.printf("time: %lu\r\n", millis());
   }
 }
+
+//overall prints: 50, 100, 100, 100, 100, 5.5, 5.5, 5.5, 5.5
+//first number is geiger, next 4 are moisture, last 4 are pH
