@@ -6,6 +6,7 @@
 #include <Arduino.h>
 
 #define DEBUG_PRINT 1
+String data;
 
 // NRF
 RF24 radio(7, 8); // CE, CSN
@@ -32,16 +33,16 @@ unsigned long counts; //variable for GM Tube events
 unsigned long previousMillis; //variable for measuring time
 unsigned long geiger_count;
 #define LOG_PERIOD 15000 // count rate
+void impulse() {counts++;} //counter for geiger
 
-
-void setup()  { 
+void setup() { 
   Serial.begin(9600);
 
   //geiger
   counts = 0;
   Serial.begin(9600);
   pinMode(6, INPUT);
-  attachInterrupt(digitalPinToInterrupt(3), impulse, FALLING); //define external interrupts
+  attachInterrupt(digitalPinToInterrupt(6), impulse, FALLING); //define external interrupts
   Serial.println("Start counter");
 
   //nrf
@@ -63,14 +64,15 @@ void setup()  {
   pinMode(dir1,OUTPUT); 
 }
 
-void impulse() { counts++;} //counter for geiger
-
-unsigned long geiger_loop() { //returns geiger count
+unsigned long geiger_loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis > LOG_PERIOD) {
     previousMillis = currentMillis;
-    return counts;
-    counts = 0; }
+    unsigned long result = counts;
+    counts = 0;
+    return result;
+  }
+  return 0; // Or any other suitable default value
 }
 
 //control DC 0
@@ -131,11 +133,8 @@ void loop()
     rx_buffer[len] = '\0'; // Null-terminate the received string
 
     geiger_count = geiger_loop();   
-    Serial.printf("%lu, ", geiger_count); //prints geiger data
-    Serial.println(rx_buffer);            //prints moisture and pH data in format: "%d, %d, %d, %d, %.2f, %.2f, %.2f, %.2f"
+    data = geiger_count + rx_buffer;            //1 line of CSV data: geiger(field 1), moisture(field 2-5), and pH data(field 6-9) in CSV format
     Serial.printf("time: %lu\r\n", millis());
   }
 }
 
-//overall prints: 50, 100, 100, 100, 100, 5.5, 5.5, 5.5, 5.5
-//first number is geiger, next 4 are moisture, last 4 are pH
