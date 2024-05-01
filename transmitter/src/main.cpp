@@ -70,10 +70,10 @@ void update_pH_data()
     avgValue1 = avgValue1 / 6;
 
     float milVolt0 = (float)avgValue0 * (5.0 / 1023.0); // convert the analog reading into millivolt
-    float phValue0 = -7.4074 * milVolt0 + 22.8333333;   // convert the millivolt into pH value
+    float phValue0 = -3.71654359 * milVolt0 + 14.59650933;   // convert the millivolt into pH value
 
     float milVolt1 = (float)avgValue1 * (5.0 / 1023.0);
-    float phValue1 = -7.4074 * milVolt1 + 22.8333333; 
+    float phValue1 = -3.71654359 * milVolt1 + 14.59650933; 
 
     pH_data[0] = phValue0;
     pH_data[1] = phValue1;
@@ -89,10 +89,10 @@ void update_pH_data()
     }
 }
 
-void update_moisture_data()
-{
+void update_moisture_data() {
     int sensorValue0 = analogRead(moisture0); // moisture sensor value 1
     int sensorValue1 = analogRead(moisture1); // moisture sensor value 2
+    
     moisture_data[0] = sensorValue0;
     moisture_data[1] = sensorValue1;
     moisture_data[2] = 0;
@@ -135,7 +135,7 @@ void loop()
     char combinedBuffer[256]; // Adjust the size based on the expected output length.
 
     int length = snprintf(combinedBuffer, sizeof(combinedBuffer),
-                          "%d, %d, %d, %d, %.2f, %.2f, %.2f, %.2f",
+                          "%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f",
                           moisture_data[0], moisture_data[1], moisture_data[2], moisture_data[3],
                           pH_data[0], pH_data[1], pH_data[2], pH_data[3]);
 
