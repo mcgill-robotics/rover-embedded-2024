@@ -4,6 +4,9 @@
 #include <iostream>
 #include <array>
 #include <Arduino.h>
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+#include <sstream>
 
 #define DEBUG_PRINT 1
 String data;
@@ -29,10 +32,10 @@ int revolutions = 0.25; //controls revolutions: revolutions is number of revolut
 int delay_sec = 1000;   //controls speed: lower delay time is faster rotation speed  
 
 //geiger
+#define LOG_PERIOD 15000 // count rate
 unsigned long counts; //variable for GM Tube events
 unsigned long previousMillis; //variable for measuring time
 unsigned long geiger_count;
-#define LOG_PERIOD 15000 // count rate
 void impulse() {counts++;} //counter for geiger
 
 void setup() { 
@@ -133,8 +136,29 @@ void loop()
     rx_buffer[len] = '\0'; // Null-terminate the received string
 
     geiger_count = geiger_loop();   
-    data = geiger_count + rx_buffer;            //1 line of CSV data: geiger(field 1), moisture(field 2-5), and pH data(field 6-9) in CSV format
+    data = geiger_count + rx_buffer;            //"data" is 1 line of CSV data: geiger(field 1), moisture(field 2-5), and pH data(field 6-9) in CSV format
     Serial.printf("time: %lu\r\n", millis());
   }
+}
+
+int main(int argc, char **argv) {
+	ros::init(argc, argv, "science"); //node name is "science"
+	ros::NodeHandle n;
+	ros::Publisher science_pub = n.advertise<std_msgs::String>("science_data", 10); //publish to topic "science_data"
+	ros::Rate loop_rate(1); //frequency to publish at
+
+	int count = 0;
+	while (ros::ok()) {	//keep looping until CTRL+c
+		std_msgs::String msg;
+		std::stringstream ss;
+		ss << "200,90,90,90,90,400.50,400.50,400.50,400.50\n" << count; //append 1 line od CSV data and count
+		msg.data = ss.str();
+		ROS_INFO("%s", msg.data.c_str()); //ros_info prints the string, timestamp, and node name
+		science_pub.publish(msg); //publisher object chatter_pub publishes msg to chatter topic
+		ros::spinOnce();
+		loop_rate.sleep();
+		++count; 
+	}
+	return 0;
 }
 
