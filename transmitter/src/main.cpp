@@ -13,11 +13,11 @@ const byte address[6] = "00001";
 
 #include <Arduino.h>
 
-// moisture sensor(2)
+// moisture sensor
 #define moisture0 A0 // analog pin on teensy
 #define moisture1 A1 // analog pin on teensy
 
-// pH sensor(1)
+// pH sensor
 #define ph0 A2              // analog pin on teensy
 #define ph1 A3
 unsigned long int avgValue0; // average of 10 milli volt readings
