@@ -6,11 +6,7 @@
 
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
-/*
-   This sample sketch demonstrates the normal use of a TinyGPSPlus (TinyGPSPlus) object.
-   It requires the use of SoftwareSerial, and assumes that you have a
-   4800-baud serial GPS device hooked up on pins 4(rx) and 3(tx).
-*/
+
 
 extern float rover_gps_coords[2] = {0,0};
 
@@ -26,22 +22,20 @@ TinyGPSPlus gps;
 
 void gps_setup()
 {
-    Serial.println(F("DeviceExample.ino"));
-    Serial.println(F("A simple demonstration of TinyGPSPlus with an attached GPS module"));
-    Serial.print(F("Testing TinyGPSPlus library v. "));
-    Serial.println(TinyGPSPlus::libraryVersion());
-    Serial.println(F("by Mikal Hart"));
-    Serial.println();
+    // Empty
 }
 
 void gps_loop()
 {
-    // This sketch displays information every time a new sentence is correctly encoded.
+    // This displays information every time a new sentence is correctly encoded.
+    
     while (Serial1.available() > 0)
     {
         if (gps.encode(Serial1.read()))
         {
-            displayInfo();
+            // displayInfo(); For Debugging
+            
+            //--------------------
             float lat = (float)gps.location.lat();
             float lng = (float)gps.location.lng();
             rover_gps_coords[0]=lat;
@@ -54,11 +48,11 @@ void gps_loop()
         Serial.println(F("No GPS detected: check wiring."));
         rover_gps_coords[0] = 0;
         rover_gps_coords[1] = 0; // gps returning 0,0 should be seen as an error code
-        while (true)
-        ;
+        while (true); // program gives up on you
     }
 }
 
+// Displayed Latitude, Longitude, Date, Time
 void displayInfo()
 {
     Serial.print(F("Location: "));

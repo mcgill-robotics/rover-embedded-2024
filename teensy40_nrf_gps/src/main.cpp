@@ -33,12 +33,17 @@ extern void gps_loop();
 
 void setup()
 {
+  // ROS Setup
+  nh.initNode();
+  nh.advertise(roverGPSData_pub);
+  
   // Wait for Serial
   Serial.begin(115200);
   Serial1.begin(GPSBaud);
   while (!Serial);
 
-  gps_setup();
+  //gps_setup(); -- Currently empty
+  
   //nrf24_setup(); - this will be swapped with pan tilt script setup()
 }
 
@@ -46,7 +51,7 @@ void loop()
 {
   gps_loop();
   ros_loop();
-  
+
   //nrf24_loop(gps_loop()); - this will be swapped with pan tilt script loop()
 }
 
@@ -58,7 +63,7 @@ void ros_loop()
     roverGPSData_pub.publish(&roverGPSDataMsg);
 
     nh.spinOnce();
-    delay(1);
+    delay(1); // Delay may require change
 }
 
 /*  ----------- To use for the CAMERA PAN TILT COMMANDS ----------------------
