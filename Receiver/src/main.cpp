@@ -1,12 +1,11 @@
+#include <Arduino.h>
+#include <ros.h>
+#include <std_msgs/String.h>
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <iostream>
 #include <array>
-#include <Arduino.h>
-#include "ros/ros.h"
-#include "std_msgs/String.h"
-#include <sstream>
 
 #define DEBUG_PRINT 1
 String data;
@@ -151,10 +150,10 @@ int main(int argc, char **argv) {
 	while (ros::ok()) {	//keep looping until CTRL+c
 		std_msgs::String msg;
 		std::stringstream ss;
-		ss << "200,90,90,90,90,400.50,400.50,400.50,400.50\n" << count; //append 1 line od CSV data and count
+		ss << "200,90,90,90,90,400.50,400.50,400.50,400.50\n" << count; //append 1 line of CSV data and count
 		msg.data = ss.str();
 		ROS_INFO("%s", msg.data.c_str()); //ros_info prints the string, timestamp, and node name
-		science_pub.publish(msg); //publisher object chatter_pub publishes msg to chatter topic
+		science_pub.publish(msg); //publisher object science_pub publishes msg to chatter topic
 		ros::spinOnce();
 		loop_rate.sleep();
 		++count; 
