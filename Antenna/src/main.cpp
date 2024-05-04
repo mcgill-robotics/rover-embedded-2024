@@ -12,7 +12,7 @@
 ros::NodeHandle nh;
 float antenna_gps_coords[2];
 std_msgs::Float32MultiArray antennaGPSDataMsg;
-ros::Publisher roverGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
+ros::Publisher antennaGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
 
 void ros_loop();
 
@@ -20,7 +20,7 @@ void antenna_overide_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_gps_cmd_sub("/antennaGPSOverideCmd", antenna_overide_gps_cmd_cb);
 
 void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaGPSOverideCmd", antenna_overide_gps_cmd_cb);
+ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaHeadingOverideCmd", antenna_overide_gps_cmd_cb);
 
 void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> rover_gps_cmd_sub("/roverGPSFeedCmd", rover_gps_cmd_cb);
