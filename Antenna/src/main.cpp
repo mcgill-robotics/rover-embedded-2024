@@ -63,7 +63,7 @@ void antenna_overide_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
   antenna_heading_params[1] = input_msg.data[1]; 
 }
 
-void antenna_overide_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
+void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
   antenna_heading_params[0] = input_msg.data[2];
   antenna_heading_params[1] = input_msg.data[3]; 
