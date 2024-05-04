@@ -3,8 +3,8 @@
 # Rover GPS + Pan Tilt Camera Control Board
 
 ## ROS Topics
-- `/roverGPSData` Float32MultiArray
-- `/pantiltCmd` Float32MultiArray
+- `/roverGPSData` Float32MultiArray - Publisher
+- `/pantiltCmd` Float32MultiArray - Subscriber
 
 ## Related Variables
 - `rover_gps_coords[latitude, longitude]`
