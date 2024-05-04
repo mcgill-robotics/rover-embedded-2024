@@ -3,10 +3,10 @@
 # Base Station Antenna
 
 ## ROS Topics
-- 1. `/antennaGPSData`
-- 2. `/antennaGPSOverideCmd`
-- 3. `/antennaHeadingOverideCmd`
-- 4. `/roverGPSFeedCmd`
+- 1. `/antennaGPSData` Float32MultiArray - Publisher
+- 2. `/antennaGPSOverideCmd` Float32MultiArray - Subscriber
+- 3. `/antennaHeadingOverideCmd` Float32MultiArray - Subscriber
+- 4. `/roverGPSFeedCmd` Float32MultiArray - Subscriber
 
 ## Related Variables
 - 1. `antenna_gps_coords[latitude, longitude]`
