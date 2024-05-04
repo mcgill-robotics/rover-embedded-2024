@@ -3,10 +3,12 @@
 # Rover GPS + Pan Tilt Camera Control Board
 
 ## ROS Topics
-- `/roverGPSData`
+- `/roverGPSData` Float32MultiArray
+- `/pantiltCmd` Float32MultiArray
 
 ## Related Variables
 - `rover_gps_coords[latitude, longitude]`
+- `pantilt_cmd_cb[pitch, yaw]`
 
 ## Functionality
 This board provides the following functionality:
@@ -15,3 +17,5 @@ This board provides the following functionality:
 
 ## Note
 A GPS value of [0,0] should be treated as an error code.
+
+![camera rotation](https://i.stack.imgur.com/1OFpX.png)
