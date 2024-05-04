@@ -35,7 +35,7 @@ extern float antenna_heading_params[4];
 void setup(){
   // ROS Setup
   nh.initNode();
-  nh.advertise(roverGPSData_pub);
+  nh.advertise(antennaGPSData_pub);
 
   antenna_setup();
 }
@@ -51,7 +51,7 @@ void ros_loop()
 
     antennaGPSDataMsg.data_length = 2;
     antennaGPSDataMsg.data = temp;
-    roverGPSData_pub.publish(&antennaGPSDataMsg);  
+    antennaGPSData_pub.publish(&antennaGPSDataMsg);  
 
     nh.spinOnce();
     delay(1); // Delay may require change
