@@ -4,17 +4,19 @@
 #include <math.h>
 #include <iostream>
 
-#define ANTENNA_PWM_PIN 1
+#define ANTENNA_PWM_PIN 9
 
-extern float rover_coords[2] = {0,0}; //latitude, longitude - 0,0 
-extern float antenna_heading_params[4] = {0,0,0,0}; //latitude, longitude, compass angle
 float servo_angle[1];
 
 Servo servo;
 
+double sin_theta = 0;
+extern float rover_coords[2] = {0,0}; //latitude, longitude - 0,0 
+extern float antenna_heading_params[4] = {0,0,0,1}; //latitude, longitude, compass angle
+
 void antenna_setup(){
     Serial.begin(9600);
-    servo.attach(ANTENNA_PWM_PIN);
+    servo.attach(9);
     delay(3000);
     // antenna_heading_params[0]=0; --- hardset for testing
     // antenna_heading_params[1]=0;
@@ -23,8 +25,9 @@ void antenna_setup(){
 }
 
 void antenna_loop(){
-  // rover_coords[0]=0; --- hardset for testing
-  // rover_coords[1]=0;
+
+  rover_coords[0] = 45.50603282104473;// --- hardset for testing
+  rover_coords[1] = -73.57661358130882;
 
   if (rover_coords[0] == 0 && rover_coords[1] == 0) return; // Nothing should happen if rover coords are Null
   if (antenna_heading_params[0] == 0 && antenna_heading_params[1] == 0) return; // Nothing should happen if antenna coords are Null
@@ -51,6 +54,7 @@ void antenna_loop(){
   }
 
   // Adding the offset and setting the servo angle
+  // Serial.println(sin_theta);
   if (sin_theta < 0){
     servo_angle[0] = (float)(90 + theta_deg);
     servo.write(servo_angle[0]);
@@ -59,7 +63,7 @@ void antenna_loop(){
     servo_angle[0] = (float)(90 - theta_deg);
     servo.write(servo_angle[0]);
   }
-  Serial.print(servo_angle[0]);
-  delay(5000);
+  // Serial.println(servo_angle[0]);
+  delay(100);
 }
 

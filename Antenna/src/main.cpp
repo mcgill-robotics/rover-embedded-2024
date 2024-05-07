@@ -32,20 +32,59 @@ extern void antenna_loop();
 extern float rover_coords[2];
 extern float antenna_heading_params[4];
 
+static const uint32_t GPSBaud = 9600;
+extern float base_gps_coords[2];
+extern void gps_setup();
+extern void gps_loop();
+
+int IsOveriden = 1;
+extern double sin_theta;
+extern float servo_angle[1];
+
 void setup(){
   // ROS Setup
   nh.initNode();
   nh.advertise(antennaGPSData_pub);
 
+  // Wait for Serial
+  Serial.begin(115200);
+  Serial1.begin(GPSBaud);
+  while (!Serial);
+
   antenna_setup();
+  // gps_setup();
 }
 
 void loop(){
+
+    antenna_heading_params[0] = base_gps_coords[0] ;
+      antenna_heading_params[1] = base_gps_coords[1] ;
+  // Serial.print(antenna_heading_params[0]);
+  // Serial.print(" , ");
+  // Serial.print(antenna_heading_params[1]);
+
+  // Serial.print(" || ");
+
+  //  Serial.print(rover_coords[0]);
+  // Serial.print(" , ");
+  // Serial.print(rover_coords[1]);
+
+  // Serial.print(" || ");
+
+  Serial.println(sin_theta);
+  
   antenna_loop();
+  gps_loop();
+  ros_loop();
 }
 
 void ros_loop()
 {
+    if(IsOveriden == 0){
+      antenna_heading_params[0] = base_gps_coords[0] ;
+      antenna_heading_params[1] = base_gps_coords[1] ;
+    }
+
     // Publish Antenna GPS Coords
     float temp[2] = {antenna_heading_params[0],antenna_heading_params[1]};
 
@@ -65,8 +104,12 @@ void antenna_overide_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 
 void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
-  antenna_heading_params[0] = input_msg.data[2];
-  antenna_heading_params[1] = input_msg.data[3]; 
+  //IsOveriden = true;
+  IsOveriden = input_msg.data[0];
+  if(IsOveriden){
+    antenna_heading_params[0] = input_msg.data[1];
+    antenna_heading_params[1] = input_msg.data[2]; 
+  }
 }
 
 
