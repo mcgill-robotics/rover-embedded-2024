@@ -46,7 +46,7 @@ float model_sensor::read_sensor_value(void)
 	float sensorValue = _sensor_value + _sensor_offset;
 	_current16 = sensorValue - 1862;
 	_raw_voltage = sensorValue * (3.3 / 4095.0);
-	_current = (_raw_voltage - 1.5) * 2;
+	_current = abs(_raw_voltage - 1.5) * 2;
 	return _current;
 }
 
@@ -67,14 +67,7 @@ float model_sensor::get_raw_voltage(void)
 
 void model_sensor::_update_sensor_value(void)
 {
-	// if (_pin == CURRENT_SENSE_A1 ||
-	// 		_pin == CURRENT_SENSE_B1 ||
-	// 		_pin == CURRENT_SENSE_A2 ||
-	// 		_pin == CURRENT_SENSE_B2) {
-	//     _sensor_value = _adc->adc1->analogRead(_pin);
-	// }else{
 	_sensor_value = _adc->adc0->analogRead(_pin);
-	// }
 }
 
 void model_sensor::_initialize_adc(void)

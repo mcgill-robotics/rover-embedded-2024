@@ -18,15 +18,9 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
     _resolution = resolution;
     _port = port;
 
-    _angularVelocity = 0.0;
+    _angle = offset;
     _quad_enc_pos = _offset * (_resolution / 360.0);
     _last_angle = 0.0;
-
-    // TODO: check implementation multi-turn, should default true or false?
-    _turn_count = 0;
-    _angle_multi = 0.0;  // angle from 0 to 360 in degrees
-    _angle_single = 0.0; // angle from 0 to 360 in degrees
-    _is_multi_turn = true;
 
     switch (port)
     {
@@ -61,8 +55,6 @@ void model_encoder::initialize_encoder(uint8_t rotationalDirection, float offset
     _encoder->EncConfig.positionInitialValue = _quad_enc_pos;
     _encoder->EncConfig.revolutionCountCondition = 1;
     _encoder->init();
-
-    _velocityEstimation.initialize_parameters(_resolution, 8.0, 1000000.0, 1, 200000);
 }
 
 void model_encoder::reset_encoder()
@@ -72,34 +64,17 @@ void model_encoder::reset_encoder()
     _encoder->init();
 }
 
-void model_encoder::set_current_angle_es(float current_angle)
-{
-    Serial.printf("Setting as current: %f\n", current_angle);
-    _offset = current_angle;
-    _quad_enc_pos = current_angle * (_resolution / 360.0);
-    _encoder->write(_quad_enc_pos);
-}
-
 void model_encoder::poll_encoder_angle()
 {
     _quad_enc_pos = _encoder->read();
 
-    // Useless since _position always positive?
-    _angle_single = (_quad_enc_pos >= 0) ? (_quad_enc_pos % _resolution) : _resolution - (abs(_quad_enc_pos) % _resolution);
-    _angle_single = (360.0 / _resolution) * _angle_single;
-    _angle_multi = _quad_enc_pos * (360.0 / _resolution);
-
-    _velocityEstimation.update_readings(_quad_enc_pos * (360.0 / _resolution), micros());
+    _angle = (_quad_enc_pos >= 0) ? (_quad_enc_pos % _resolution) : _resolution - (abs(_quad_enc_pos) % _resolution);
+    _angle = (360.0 / _resolution) * _angle;
 }
 
-float model_encoder::get_angle_multi()
+float model_encoder::get_angle()
 {
-    return _angle_multi;
-}
-
-float model_encoder::get_angle_single()
-{
-    return _angle_single;
+    return _angle;
 }
 
 void model_encoder::set_parameters(uint8_t direction, float offset, float resolution)
@@ -122,14 +97,4 @@ void model_encoder::set_parameters(uint8_t direction, float offset, float resolu
     _encoder->setInitConfig();
     _encoder->EncConfig.positionInitialValue = _quad_enc_pos;
     _encoder->init();
-}
-
-void model_encoder::velocityEstimation(void)
-{
-    _angularVelocity = _velocityEstimation.foaw(0);
-}
-
-float model_encoder::getVelocity(void)
-{
-    return _angularVelocity;
 }

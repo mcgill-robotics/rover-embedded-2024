@@ -12,6 +12,7 @@
 #define HARDWARE_PINS_H
 
 #include <stdint.h>
+#define CONTROL_LOOP_PERIOD_MS 10
 
 const uint8_t ENCPIN1_1 = 0;
 const uint8_t ENCPIN1_2 = 1;
@@ -20,7 +21,7 @@ const uint8_t ENCPIN2_1 = 2;
 const uint8_t ENCPIN2_2 = 3;
 
 const uint8_t ENCPIN3_1 = 4;
-const uint8_t ENCPIN3_2 = 5;
+const uint8_t ENCPIN3_2 = 7;
 
 const uint8_t PWMPIN1 = 13; // enable pin
 const uint8_t DIRPIN1 = 16; // phase pin
@@ -50,4 +51,16 @@ const uint8_t LIM_6 = 23;
 
 const float wrist_pitch_max_angle = 30.0;
 const float wrist_pitch_min_angle = -30.0;
+
+const uint8_t MOTOR1_CONTINOUS = 0;
+const uint8_t MOTOR2_CONTINOUS = 0;
+const uint8_t MOTOR3_CONTINOUS = 0;
+
+const float MOTOR1_LIMIT_MAX = 270.0;
+const float MOTOR1_LIMIT_MIN = 90.0;
+const float MOTOR2_LIMIT_MAX = 300.0;
+const float MOTOR2_LIMIT_MIN = 30.0;
+const float MOTOR3_LIMIT_MAX = 300.0;
+const float MOTOR3_LIMIT_MIN = 30.0;
+
 #endif

@@ -14,7 +14,6 @@
 #define MODEL_ENCODER_H
 
 #include "hardware_pins.h"
-#include "velocity_estimation.h"
 #include "QuadEncoder.h"
 
 class model_encoder
@@ -26,19 +25,9 @@ public:
 
     void reset_encoder(void);
 
-    void set_current_angle_es(float offset);
-
     void poll_encoder_angle(void);
 
-    float get_angle_multi(void);
-
-    float get_angle_single(void);
-
-    float get_full_angle_from_tick()
-    {
-        uint32_t tick = _encoder->read();
-        return (float)tick * 360.0 / (float)_resolution;
-    }
+    float get_angle(void);
 
     void set_parameters(uint8_t direction, float offset, float resolution);
 
@@ -47,9 +36,6 @@ public:
      *
      * @param currentTime current micros count
      */
-    void velocityEstimation(void);
-
-    float getVelocity(void);
 
 private:
     // QuadEncoder *_encoder;
@@ -61,15 +47,7 @@ private:
     uint8_t _pinB;
 
     float _angle;
-    float _angle_single;
-    float _angle_multi;
-    float _angularVelocity;
-    velocity_estimation _velocityEstimation;
-    boolean _is_multi_turn;
-    int _turn_count;
     float _last_angle;
-    // Offset compared to boot position
-    float _zero_angle_offset;
 };
 
 #endif
