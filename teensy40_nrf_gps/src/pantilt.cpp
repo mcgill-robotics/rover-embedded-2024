@@ -6,14 +6,15 @@
 Servo pitch; //create servo type object
 Servo yaw;
 
-float pitch_yaw[2] = {0, 0};
+float pitch_yaw[2] = {10, 10};
 float pitch_yaw_increment[2] = {0, 0};
 bool angle_updated = false;
 
 void pantilt_setup() {
-  // put your setup code here, to run once:
-  pitch.attach(5,300,2700);
-  yaw.attach(7,300,3100); 
+  // pitch.attach(5,300,2700);
+  pitch.attach(5, 900, 2100);
+  yaw.attach(6,300,3100); 
+  // yaw.attach(6, 900, 2100);
 
 }
 
