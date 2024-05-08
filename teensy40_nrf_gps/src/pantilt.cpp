@@ -8,7 +8,7 @@ Servo yaw;
 
 float pitch_yaw[2] = {10, 10};
 float pitch_yaw_increment[2] = {0, 0};
-bool angle_updated = false;
+// bool angle_updated = false; // not used
 
 void pantilt_setup() {
   // pitch.attach(5,300,2700);

@@ -57,7 +57,6 @@ void setup()
   // Wait for Serial
   // Serial.begin(115200);
   Serial1.begin(GPSBaud);
-  while (!Serial);
 
   roverGPSDataMsg.data_length = 2;
   roverGPSDataMsg.data = rover_gps_coords;
@@ -71,6 +70,7 @@ void loop()
 {
   while(millis() - last_time < CONTROL_LOOP_PERIOD_MS);
   last_time = millis();
+  
   //gps_loop();
   pantilt_loop();
   ros_loop();
@@ -92,6 +92,5 @@ void pantilt_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
     pitch_yaw[1] = input_msg.data[1]; // yaw
 
     // Serial.println(pitch_yaw[0]);
-
-    angle_updated = true;
+    // angle_updated = true; - not used
 }
