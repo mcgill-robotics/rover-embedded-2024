@@ -12,9 +12,12 @@ float pitch_yaw_increment[2] = {0, 0};
 
 void pantilt_setup() {
   // pitch.attach(5,300,2700);
-  pitch.attach(5, 900, 2100);
-  yaw.attach(6,300,3100); 
-  // yaw.attach(6, 900, 2100);
+  pitch.attach(5, 300, 2700);
+  yaw.attach(6,300,2800); 
+
+  //defaul pos
+  yaw.write(30);
+  pitch.write(90);
 
 }
 
@@ -23,6 +26,7 @@ void pantilt_loop() {
     pitch.write((int)pitch_yaw[0]);
     yaw.write((int)pitch_yaw[1]);
 
+/*
 // //   if (!angle_updated) return;
 //     pitch_yaw[1] = 180;//2300;
 //     pitch_yaw[0] = 180;//2300;
@@ -56,4 +60,5 @@ void pantilt_loop() {
 //   } 
 
 //   angle_updated = false;
+*/
 }
