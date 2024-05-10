@@ -21,12 +21,10 @@ const int pwm0 = 2;   //analogWrite pwm value between 0-255 for speed
 const int dir0 = 3;   //digitalWrite dir value HIGH/LOW for direction
 const int pwm1 = 4;  
 const int dir1 = 5;  
-void screw_up(); 
-void screw_down();
-void auger_up();
-void auger_down();
-void stop_top();
-void stop_bottom();
+int screw_counter = 0;
+unsigned long last_time;
+bool isMotorRunning = false;
+#define CONTROL_LOOP_PERIOD_MS 10
 
 // //limit switch
 // const int top = 11;     //top limit switch
@@ -149,6 +147,7 @@ void rotate_stepper() {
 
 /////////////////////////   SCREW CONTROL(up/down)   ////////////////////////////////////////
 void screw_up() { //move screw UP until stopped or top limit switch is hit
+  isMotorRunning = true;
   digitalWrite(dir0, HIGH);
   analogWrite(pwm0, 20);
   delay(500);
@@ -158,6 +157,7 @@ void screw_up() { //move screw UP until stopped or top limit switch is hit
 }
 
 void screw_down() { //move screw DOWN until stopped or bottom switch is hit
+  isMotorRunning = true;
   digitalWrite(dir0, LOW); 
   analogWrite(pwm0, 20);
   delay(500);
@@ -167,12 +167,24 @@ void screw_down() { //move screw DOWN until stopped or bottom switch is hit
 }
 
 void screw_stop() { //stops the screw 
+  isMotorRunning = false;
   analogWrite(pwm0, 60);
   delay(500);
   analogWrite(pwm0, 20);
   delay(500); 
   analogWrite(pwm0, 0);
 }
+
+void screw_loop() { //stops screw if at top/bottom limit
+  while (millis() - last_time < CONTROL_LOOP_PERIOD_MS) { last_time = millis(); }
+
+  if (digitalRead(pwm0) == HIGH && isMotorRunning) { screw_counter ++; }      //increment counter if moving up, decrement if down
+  else if (digitalRead(pwm0) == LOW && isMotorRunning) { screw_counter --; }
+
+  if (screw_counter >= 1000) { screw_stop(); }                                //set the top and bottom limits of the counter(height limit)
+  else if (screw_counter <= 100) { screw_stop(); }
+} 
+
 
 // void ISR_top() {  //top limit switch interrupt: moves the auger down a bit and stops
 //   digitalWrite(dir0, LOW);  
