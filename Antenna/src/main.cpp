@@ -19,7 +19,7 @@ ros::Publisher antennaGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
 void ros_loop();
 
 void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaHeadingOverideCmd", antenna_overide_heading_cmd_cb);
+ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaHeading", antenna_overide_heading_cmd_cb);
 
 // DECLARATIONS
 extern void antenna_setup();
