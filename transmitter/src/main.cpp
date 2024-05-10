@@ -5,7 +5,6 @@
 #include <iostream>
 #include <array>
 #include <string>
-//test
 
 #define DEBUG_PRINT 1
 
