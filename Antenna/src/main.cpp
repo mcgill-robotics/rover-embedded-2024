@@ -18,19 +18,13 @@ ros::Publisher antennaGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
 
 void ros_loop();
 
-void antenna_overide_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_gps_cmd_sub("/antennaGPSOverideCmd", antenna_overide_gps_cmd_cb);
-
 void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaHeadingOverideCmd", antenna_overide_gps_cmd_cb);
-
-void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float32MultiArray> rover_gps_cmd_sub("/roverGPSFeedCmd", rover_gps_cmd_cb); // used to be /roverGPSFeedCmd
-
+ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaHeadingOverideCmd", antenna_overide_heading_cmd_cb);
 
 // DECLARATIONS
 extern void antenna_setup();
 extern void antenna_loop();
+extern void set_pos(float pos);
 extern float rover_coords[2];
 extern float antenna_heading_params[4];
 
@@ -49,10 +43,7 @@ void setup(){
   // ROS Setup
   nh.initNode();
   nh.advertise(antennaGPSData_pub);
-
-  nh.subscribe(antenna_overide_gps_cmd_sub);
   nh.subscribe(antenna_overide_heading_cmd_sub);
-  nh.subscribe(rover_gps_cmd_sub);
   nh.negotiateTopics();
   
   while (!nh.connected())
@@ -60,10 +51,12 @@ void setup(){
     nh.negotiateTopics();
   }
 
-  // Wait for Serial
-  // Serial.begin(115200); -- removed might interveen with ros
   Serial1.begin(GPSBaud);
   while (!Serial1);
+
+  //ROS 
+  antennaGPSDataMsg.data_length = 2;
+  antennaGPSDataMsg.data = base_gps_coords;
 
   antenna_setup();
   // gps_setup();
@@ -75,61 +68,19 @@ void loop(){
   while(millis() - last_time < CONTROL_LOOP_PERIOD_MS);
   last_time = millis();
 
-  antenna_heading_params[0] = base_gps_coords[0];
-  antenna_heading_params[1] = base_gps_coords[1];
-
-  // Serial.print(antenna_heading_params[0]);
-  // Serial.print(" , ");
-  // Serial.print(antenna_heading_params[1]);
-  // Serial.print(" || ");
-  //  Serial.print(rover_coords[0]);
-  // Serial.print(" , ");
-  // Serial.print(rover_coords[1]);
-  // Serial.print(" || ");
-  // Serial.println(sin_theta);
-  
-  antenna_loop();
+  // antenna_loop(); // loop empty
   gps_loop();
   ros_loop();
 }
 
 void ros_loop()
 {
-    if(IsOveriden == 0){
-      antenna_heading_params[0] = base_gps_coords[0] ;
-      antenna_heading_params[1] = base_gps_coords[1] ;
-    }
-
-    // Publish Antenna GPS Coords
-    float temp[2] = {antenna_heading_params[0],antenna_heading_params[1]};
-
-    antennaGPSDataMsg.data_length = 2;
-    antennaGPSDataMsg.data = temp;
     antennaGPSData_pub.publish(&antennaGPSDataMsg);  
-
     nh.spinOnce();
-    delay(1); // Delay may require change
-}
-
-void antenna_overide_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
-{
-  antenna_heading_params[0] = input_msg.data[0];
-  antenna_heading_params[1] = input_msg.data[1]; 
 }
 
 void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
-  //IsOveriden = true;
-  IsOveriden = input_msg.data[0];
-  if(IsOveriden){
-    antenna_heading_params[0] = input_msg.data[1];
-    antenna_heading_params[1] = input_msg.data[2]; 
-  }
-}
-
-
-void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
-{
-  rover_coords[0] = input_msg.data[0];
-  rover_coords[1] = input_msg.data[1];    
+  float pos = (float)input_msg.data[0];
+  set_pos(pos);
 }
