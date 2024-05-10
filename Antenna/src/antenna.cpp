@@ -6,6 +6,7 @@
 
 #define ANTENNA_PWM_PIN 9
 
+
 float servo_angle[1];
 
 Servo servo;
@@ -23,7 +24,7 @@ void antenna_setup(){
     // antenna_heading_params[2]=0;
     // antenna_heading_params[3]=1;
 }
-
+ 
 void antenna_loop(){
 
   rover_coords[0] = 45.50603282104473;// --- hardset for testing
@@ -64,6 +65,5 @@ void antenna_loop(){
     servo.write(servo_angle[0]);
   }
   // Serial.println(servo_angle[0]);
-  delay(100);
 }
 

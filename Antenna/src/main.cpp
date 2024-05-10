@@ -7,6 +7,8 @@
 #include <math.h>
 #include <iostream>
 
+#define CONTROL_LOOP_PERIOD_MS 10
+
 
 // ROS
 ros::NodeHandle nh;
@@ -23,7 +25,7 @@ void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg
 ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/antennaHeadingOverideCmd", antenna_overide_gps_cmd_cb);
 
 void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float32MultiArray> rover_gps_cmd_sub("/roverGPSFeedCmd", rover_gps_cmd_cb);
+ros::Subscriber<std_msgs::Float32MultiArray> rover_gps_cmd_sub("/roverGPSFeedCmd", rover_gps_cmd_cb); // used to be /roverGPSFeedCmd
 
 
 // DECLARATIONS
@@ -41,37 +43,50 @@ int IsOveriden = 1;
 extern double sin_theta;
 extern float servo_angle[1];
 
+unsigned long last_time;
+
 void setup(){
   // ROS Setup
   nh.initNode();
   nh.advertise(antennaGPSData_pub);
 
+  nh.subscribe(antenna_overide_gps_cmd_sub);
+  nh.subscribe(antenna_overide_heading_cmd_sub);
+  nh.subscribe(rover_gps_cmd_sub);
+  nh.negotiateTopics();
+  
+  while (!nh.connected())
+  {
+    nh.negotiateTopics();
+  }
+
   // Wait for Serial
-  Serial.begin(115200);
+  // Serial.begin(115200); -- removed might interveen with ros
   Serial1.begin(GPSBaud);
-  while (!Serial);
+  while (!Serial1);
 
   antenna_setup();
   // gps_setup();
+
+  last_time = millis();
 }
 
 void loop(){
+  while(millis() - last_time < CONTROL_LOOP_PERIOD_MS);
+  last_time = millis();
 
-    antenna_heading_params[0] = base_gps_coords[0] ;
-      antenna_heading_params[1] = base_gps_coords[1] ;
+  antenna_heading_params[0] = base_gps_coords[0];
+  antenna_heading_params[1] = base_gps_coords[1];
+
   // Serial.print(antenna_heading_params[0]);
   // Serial.print(" , ");
   // Serial.print(antenna_heading_params[1]);
-
   // Serial.print(" || ");
-
   //  Serial.print(rover_coords[0]);
   // Serial.print(" , ");
   // Serial.print(rover_coords[1]);
-
   // Serial.print(" || ");
-
-  Serial.println(sin_theta);
+  // Serial.println(sin_theta);
   
   antenna_loop();
   gps_loop();

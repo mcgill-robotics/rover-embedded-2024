@@ -19,7 +19,7 @@ TinyGPSPlus gps;
 
 // The serial connection to the GPS device
 // SoftwareSerial ss(RXPin, TXPin);
-
+ 
 void gps_setup()
 {
     // Empty
