@@ -3,14 +3,14 @@
 # Rover Science Box
 
 ## ROS Topics
-- '/science_data' publishes a Float32MultiArray of length 12, elements 0-3 are pH values, 4-7 are moisture values, 8-11 are geiger values
-- '/stepper_position' publishes a Float32MultiArray of length 1 which is the updated carousel position. Positions 0/2/4/6 are diagonal(aligned with geiger), positions 1/3/5/7 are straight.
-- '/augerCmd' subscribes to a Float32MultiArray of length 2 which controls the screw(up/down) and auger(soil collection) respectively. values can be -1(down), 0(stop), 1(up)
-- '/stepperCmd' subscribes to a Float32MultiArray of length 1 which prompts the carousel to turn 1/8 of a rotation
+- `/science_data` publishes a Float32MultiArray of length 12, elements 0-3 are pH values, 4-7 are moisture values, 8-11 are geiger values
+- `/stepper_position` publishes a Float32MultiArray of length 1 which is the updated carousel position. Positions 0/2/4/6 are diagonal(aligned with geiger), positions 1/3/5/7 are straight.
+- `/augerCmd` subscribes to a Float32MultiArray of length 2 which controls the screw(up/down) and auger(soil collection) respectively. values can be -1(down), 0(stop), 1(up)
+- `/stepperCmd` subscribes to a Float32MultiArray of length 1 which prompts the carousel to turn 1/8 of a rotation
 
 ## Related Variables
-- 'stepper_pos'
-- 'science_data_msg'
+- `stepper_pos`
+- `science_data_msg`
 
 ## Functionality
 This board provides the following functionality:
