@@ -10,10 +10,12 @@
 float servo_angle[1];
 
 Servo servo;
+bool firstRoverPos = false;
+bool isOveriden = false;
 
 double sin_theta = 0;
 extern float rover_coords[2] = {0,0}; //latitude, longitude - 0,0 
-extern float antenna_heading_params[4] = {0,0,0,1}; //latitude, longitude, compass angle
+extern float antenna_heading_params[4] = {0,0,0,0}; //latitude, longitude, initial rover pos
 
 void antenna_setup(){
     Serial.begin(9600);
@@ -26,13 +28,22 @@ void antenna_setup(){
 }
  
 void antenna_loop(){
+  // rover_coords[0] = 45.50603282104473;// --- hardset for testing
+  // rover_coords[1] = -73.57661358130882;
 
-  rover_coords[0] = 45.50603282104473;// --- hardset for testing
-  rover_coords[1] = -73.57661358130882;
+  if(isOveriden){
+    servo.write(servo_angle[0]);
+    return;
+  }
 
   if (rover_coords[0] == 0 && rover_coords[1] == 0) return; // Nothing should happen if rover coords are Null
-  if (antenna_heading_params[0] == 0 && antenna_heading_params[1] == 0) return; // Nothing should happen if antenna coords are Null
+  if (!firstRoverPos){ 
+    antenna_heading_params[2] = rover_coords[0];
+    antenna_heading_params[3] = rover_coords[1];
+    firstRoverPos = true;
+  }
 
+  if (antenna_heading_params[0] == 0 && antenna_heading_params[1] == 0) return; // Nothing should happen if antenna coords are Null
   // Calculating the differences
   double new_latitude_diff = rover_coords[0] - antenna_heading_params[0];
   double new_longitude_diff = rover_coords[1] - antenna_heading_params[1];
@@ -55,7 +66,6 @@ void antenna_loop(){
   }
 
   // Adding the offset and setting the servo angle
-  // Serial.println(sin_theta);
   if (sin_theta < 0){
     servo_angle[0] = (float)(90 + theta_deg);
     servo.write(servo_angle[0]);
@@ -64,6 +74,6 @@ void antenna_loop(){
     servo_angle[0] = (float)(90 - theta_deg);
     servo.write(servo_angle[0]);
   }
-  // Serial.println(servo_angle[0]);
+
 }
 
