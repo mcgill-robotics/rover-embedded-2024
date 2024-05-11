@@ -5,6 +5,7 @@
 #include <iostream>
 #include <array>
 #include <string>
+#include <fstream>
 
 #define DEBUG_PRINT 1
 
@@ -94,17 +95,25 @@ void update_pH_data() {
     float milVolt3 = (float)avgValue3 * (5.0 / 1023.0);
     float phValue3 = -3.71654359 * milVolt3 + 14.59650933; 
 
-    transmitter_data[0] = phValue0;
+    std::ofstream csv_number_one;
+    csv_number_one.open("phValue.csv");
+    transmitter_data[0] = phValue0; /// 1 csv
     transmitter_data[1] = phValue1;
     transmitter_data[2] = phValue2;
     transmitter_data[3] = phValue3;
+    csv_number_one << transmitter_data[0] << "\n";
+    csv_number_one.close();
 }
 
 void update_moisture_data() {
-    int sensorValue0 = analogRead(moisture0); 
+    std::ofstream csv_number_two;
+    csv_number_two.open("moisture.csv");
+    int sensorValue0 = analogRead(moisture0); // 2 csv
     int sensorValue1 = analogRead(moisture1); 
     int sensorValue2 = analogRead(moisture2); 
     int sensorValue3 = analogRead(moisture3);
+    csv_number_two << sensorValue0 << "\n";
+    csv_number_two.close();
     
     transmitter_data[4] = sensorValue0;
     transmitter_data[5] = sensorValue1;

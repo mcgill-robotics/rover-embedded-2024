@@ -9,6 +9,7 @@
 #include <RF24.h>
 #include <iostream>
 #include <array>
+#include <fstream>
 
 // NRF
 RF24 radio(10, 9);       // pins: CE, CSN
@@ -130,7 +131,14 @@ unsigned long geiger_loop() {
 // updates the geiger data of the cuvette in front of the geiger sensor
 // position:cuvette mapping -> 0:1, 2:2, 4:3, 6:4
 void update_geiger() {
-  if (stepper_position == 0) { science_data_msg.data[8] = geiger_loop();}
+  if (stepper_position == 0) { 
+    science_data_msg.data[8] = geiger_loop();
+    std::ofstream csv_file_three;
+    csv_file_three.open("geiger.csv");
+    csv_file_three << science_data_msg.data[8] << "\n";
+    csv_file_three.close();
+
+    } // 3 csv
   else if (stepper_position == 2) { science_data_msg.data[9] = geiger_loop();}
   else if (stepper_position == 4) { science_data_msg.data[10] = geiger_loop();}
   else if (stepper_position == 6) { science_data_msg.data[11] = geiger_loop();}
