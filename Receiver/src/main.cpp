@@ -174,8 +174,8 @@ void screw_up() { //move screw UP until stopped or top limit switch is hit
     analogWrite(pwm0, 60);
     delay(50); 
     analogWrite(pwm0, 100);
-    delay(50); 
-    analogWrite(pwm0, 200);
+    // delay(50); 
+    // analogWrite(pwm0, 200);
   }
 }
 
@@ -189,8 +189,8 @@ void screw_down() { //move screw DOWN until stopped or bottom switch is hit
     analogWrite(pwm0, 60);
     delay(50); 
     analogWrite(pwm0, 100);
-    delay(50); 
-    analogWrite(pwm0, 200);
+    // delay(50); 
+    // analogWrite(pwm0, 200);
   }
 }
 
