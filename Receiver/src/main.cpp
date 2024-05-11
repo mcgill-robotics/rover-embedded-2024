@@ -11,7 +11,7 @@
 #include <array>
 
 // NRF
-RF24 radio(7, 8);       // pins: CE, CSN
+RF24 radio(10, 9);       // pins: CE, CSN
 const byte address[6] = "00001";
 uint32_t lastTime = 0;
 float transmitter_data[8]; // data received(pH and moisture)
@@ -25,6 +25,8 @@ int screw_counter = 0;  //initial height is 0
 unsigned long last_time;
 bool isMotorRunning = false;
 #define CONTROL_LOOP_PERIOD_MS 10
+bool up = true;       //true if auger hasn't hit top yet
+bool down = true;     //true if auger hasn't hit bottom yet
 
 // //limit switch
 // const int top = 11;     //top limit switch
@@ -33,8 +35,8 @@ bool isMotorRunning = false;
 // void ISR_bottom();
 
 //stepper motor
-#define dirPin 9                //dirPin: digitalWrite dir value HIGH/LOW for direction
-#define stepPin 10              //stepPin: write HIGH then LOW for 1 step, use a for loop for multiple steps
+#define dirPin 1                //dirPin: digitalWrite dir value HIGH/LOW for direction
+#define stepPin 0              //stepPin: write HIGH then LOW for 1 step, use a for loop for multiple steps
 #define stepsPerRevolution 200  //number of steps per a full revolution
 int stepper_position = 0;       //the carousel position(even numbers are straight, odd are diagonal)
 
@@ -156,26 +158,32 @@ void rotate_stepper() {
 /////////////////////////   SCREW CONTROL(up/down)   ////////////////////////////////////////
 void screw_up() { //move screw UP until stopped or top limit switch is hit
   isMotorRunning = true;
-  digitalWrite(dir0, HIGH);
-  analogWrite(pwm0, 20);
-  delay(50);
-  analogWrite(pwm0, 60);
-  delay(50); 
-  analogWrite(pwm0, 100);
-  delay(50); 
-  analogWrite(pwm0, 200);
+  if (up == true) {
+    down = true;
+    digitalWrite(dir0, HIGH);
+    analogWrite(pwm0, 20);
+    delay(50);
+    analogWrite(pwm0, 60);
+    delay(50); 
+    analogWrite(pwm0, 100);
+    delay(50); 
+    analogWrite(pwm0, 200);
+  }
 }
 
 void screw_down() { //move screw DOWN until stopped or bottom switch is hit
   isMotorRunning = true;
-  digitalWrite(dir0, LOW); 
-  analogWrite(pwm0, 20);
-  delay(50);
-  analogWrite(pwm0, 60);
-  delay(50); 
-  analogWrite(pwm0, 100);
-  delay(50); 
-  analogWrite(pwm0, 200);
+  if (down == true) {
+    up = true;
+    digitalWrite(dir0, LOW); 
+    analogWrite(pwm0, 20);
+    delay(50);
+    analogWrite(pwm0, 60);
+    delay(50); 
+    analogWrite(pwm0, 100);
+    delay(50); 
+    analogWrite(pwm0, 200);
+  }
 }
 
 void screw_stop() { //stops the screw 
@@ -191,8 +199,16 @@ void screw_loop() { //stops screw if at top/bottom limit
   while (millis() - last_time < CONTROL_LOOP_PERIOD_MS) { 
       last_time = millis(); }
 
-  if ( screw_counter <= -170000000 || screw_counter >= 31500000) {  //lower limit: -170000000, upper limit: 31500000
-    analogWrite(pwm0 ,0);}
+  if ( screw_counter <= -170000000) {  //lower limit: -170000000, upper limit: 31500000
+    analogWrite(pwm0 ,0);
+    down = false;
+    up = true;
+  }
+  else if (screw_counter >= 31500000 ) {
+    analogWrite(pwm0, 0);
+    up = false;
+    down = true;
+  }
   else {
     if (digitalRead(dir0) == HIGH && isMotorRunning) { screw_counter ++; }      //increment counter if moving up, decrement if down
     else if (digitalRead(dir0) == LOW && isMotorRunning) { screw_counter --; }}
@@ -272,6 +288,11 @@ void stepper_cb(const std_msgs::Float32MultiArray &input_msg) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+void receiveFloatArray(float *data, size_t length) {
+  byte *byteData = (byte *)data;
+  size_t dataSize = length * sizeof(float);
+  radio.read(byteData, dataSize);
+}
 
 void loop() {
   screw_loop();
@@ -279,7 +300,7 @@ void loop() {
   radio.startListening();
   if (rx_flag) {
     float transmitter_data[8];
-    radio.read(&transmitter_data, sizeof(transmitter_data)); //read data received from transmitter
+    receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
     science_data_msg.data[0] = transmitter_data[0]; science_data_msg.data[1] = transmitter_data[1]; science_data_msg.data[2] = transmitter_data[2]; science_data_msg.data[3] = transmitter_data[3];
     science_data_msg.data[4] = transmitter_data[4]; science_data_msg.data[5] = transmitter_data[5]; science_data_msg.data[6] = transmitter_data[6]; science_data_msg.data[7] = transmitter_data[7];  
     science_pub.publish(&science_data_msg);

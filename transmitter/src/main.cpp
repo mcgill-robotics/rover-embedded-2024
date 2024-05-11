@@ -8,7 +8,7 @@
 
 #define DEBUG_PRINT 1
 
-RF24 radio(7, 8); // CE, CSN pins of NRF
+RF24 radio(10, 6); // CE, CSN pins of NRF
 const byte address[6] = "00001";
 float transmitter_data[8];
 
@@ -112,6 +112,13 @@ void update_moisture_data() {
     transmitter_data[7] = sensorValue3;
 }
 
+void sendFloatArray(float *data, size_t length) {
+    byte *byteData = (byte *)data;
+    size_t dataSize = length * sizeof(float);
+    radio.write(byteData, dataSize);
+    Serial.println("data sent");
+}
+
 void setup() {
     Serial.begin(9600);
     lastTime = millis();
@@ -139,8 +146,8 @@ void loop() {
     update_moisture_data();
     update_pH_data();
 
-    radio.write(&transmitter_data, sizeof(transmitter_data)); 
-
+    sendFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
+    delay(100);
     // Serial.printf("pH data: %f, %f, %f, %f\n", transmitter_data[0], transmitter_data[1], transmitter_data[2], transmitter_data[3]);
     // Serial.printf("moisture data: %f, %f, %f, %f\n", transmitter_data[4], transmitter_data[5], transmitter_data[6], transmitter_data[7]);
     // delay(10);
