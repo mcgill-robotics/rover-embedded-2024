@@ -21,7 +21,7 @@ const int pwm0 = 2;   //analogWrite pwm value between 0-255 for speed
 const int dir0 = 3;   //digitalWrite dir value HIGH/LOW for direction
 const int pwm1 = 4;  
 const int dir1 = 5;  
-int screw_counter = 0;
+int screw_counter = 0;  //initial height is 0
 unsigned long last_time;
 bool isMotorRunning = false;
 #define CONTROL_LOOP_PERIOD_MS 10
@@ -47,13 +47,16 @@ void impulse() {counts++;}
 
 //ROS
 ros::NodeHandle nh;
-std_msgs::Float32MultiArray science_data_msg;                                   //publisher for science data
+
+float science_data[12];
+std_msgs::Float32MultiArray science_data_msg;                                     //publisher for science data
 ros::Publisher science_pub("/science_data", &science_data_msg);
 
-std_msgs::Float32MultiArray stepper_pos;                                        //publisher for stepper position
-ros::Publisher stepper_pub("/stepper_position", &stepper_pos);
+float stepper_pos[1];
+std_msgs::Float32MultiArray stepper_pos_msg;                                       //publisher for stepper position
+ros::Publisher stepper_pub("/stepper_position", &stepper_pos_msg);
 
-void auger_cb(const std_msgs::Float32MultiArray &input_msg);                    //subscriber for auger command
+void auger_cb(const std_msgs::Float32MultiArray &input_msg);                       //subscriber for auger command
 ros::Subscriber<std_msgs:: Float32MultiArray> auger_sub("/augerCmd", auger_cb);
 
 void stepper_cb(const std_msgs::Float32MultiArray &input_msg);                  //subscriber for carousel command
@@ -71,6 +74,10 @@ void setup() {
   nh.subscribe(stepper_sub);
   nh.negotiateTopics();
   while (!nh.connected()) { nh.negotiateTopics(); }
+  science_data_msg.data_length = 12;
+  science_data_msg.data = science_data;
+  stepper_pos_msg.data_length =1;
+  stepper_pos_msg.data = stepper_pos;
 
   //geiger
   counts = 0;
@@ -151,20 +158,24 @@ void screw_up() { //move screw UP until stopped or top limit switch is hit
   isMotorRunning = true;
   digitalWrite(dir0, HIGH);
   analogWrite(pwm0, 20);
-  delay(500);
+  delay(50);
   analogWrite(pwm0, 60);
-  delay(500); 
+  delay(50); 
   analogWrite(pwm0, 100);
+  delay(50); 
+  analogWrite(pwm0, 200);
 }
 
 void screw_down() { //move screw DOWN until stopped or bottom switch is hit
   isMotorRunning = true;
   digitalWrite(dir0, LOW); 
   analogWrite(pwm0, 20);
-  delay(500);
+  delay(50);
   analogWrite(pwm0, 60);
-  delay(500); 
+  delay(50); 
   analogWrite(pwm0, 100);
+  delay(50); 
+  analogWrite(pwm0, 200);
 }
 
 void screw_stop() { //stops the screw 
@@ -177,15 +188,15 @@ void screw_stop() { //stops the screw
 }
 
 void screw_loop() { //stops screw if at top/bottom limit
-  while (millis() - last_time < CONTROL_LOOP_PERIOD_MS) { last_time = millis(); }
+  while (millis() - last_time < CONTROL_LOOP_PERIOD_MS) { 
+      last_time = millis(); }
 
-  if (digitalRead(pwm0) == HIGH && isMotorRunning) { screw_counter ++; }      //increment counter if moving up, decrement if down
-  else if (digitalRead(pwm0) == LOW && isMotorRunning) { screw_counter --; }
-
-  if (screw_counter >= 1000) { screw_stop(); }                                //set the top and bottom limits of the counter(height limit)
-  else if (screw_counter <= 100) { screw_stop(); }
+  if ( screw_counter <= -170000000 || screw_counter >= 31500000) {  //lower limit: -170000000, upper limit: 31500000
+    analogWrite(pwm0 ,0);}
+  else {
+    if (digitalRead(dir0) == HIGH && isMotorRunning) { screw_counter ++; }      //increment counter if moving up, decrement if down
+    else if (digitalRead(dir0) == LOW && isMotorRunning) { screw_counter --; }}
 } 
-
 
 // void ISR_top() {  //top limit switch interrupt: moves the auger down a bit and stops
 //   digitalWrite(dir0, LOW);  
@@ -203,22 +214,26 @@ void screw_loop() { //stops screw if at top/bottom limit
 
 /////////////////////////   AUGER CONTROL(soil collection)   ////////////////////////////////////////
 
-void auger_up() { //rotates auger CW until stopped
+void auger_up() { //rotates auger CW for 15 sec
   digitalWrite(dir1, HIGH);
   analogWrite(pwm1, 20);
   delay(500);
   analogWrite(pwm1, 60);
   delay(500); 
   analogWrite(pwm1, 80);
+  delay(15000);
+  analogWrite(pwm1, 0);
 }
 
-void auger_down() { //rotates auger CCW until stopped
+void auger_down() { //rotates auger CCW for 15 sec
   digitalWrite(dir1, LOW); 
   analogWrite(pwm1, 20);
   delay(500);
   analogWrite(pwm1, 60);
   delay(500); 
   analogWrite(pwm1, 80);
+  delay(15000);
+  analogWrite(pwm1, 0);
 }
 
 void auger_stop() { //stops the auger 
@@ -235,9 +250,9 @@ void auger_cb(const std_msgs::Float32MultiArray &input_msg) {
   int screw = input_msg.data[0];
   int auger = input_msg.data[1];
 
-  if (screw == 0) { screw_stop(); }
-  else if (screw == -1) { screw_down(); }
-  else if (screw == 1) { screw_up(); }
+  if (screw == 0) { screw_stop(); }         //stops at any height
+  else if (screw == -1) { screw_down(); }   //goes all the way to bottom
+  else if (screw == 1) { screw_up(); }      //goes all tge way to top
 
   if (auger == 0) { auger_stop(); }
   else if (auger == -1) { auger_down(); }
@@ -252,8 +267,8 @@ void stepper_cb(const std_msgs::Float32MultiArray &input_msg) {
   rotate_stepper();
   increase_position(); 
   update_geiger();
-  stepper_pos.data[0] = stepper_position;
-  stepper_pub.publish(&stepper_pos);
+  stepper_pos_msg.data[0] = stepper_position;
+  stepper_pub.publish(&stepper_pos_msg);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
