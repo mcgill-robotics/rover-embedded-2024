@@ -139,7 +139,7 @@ void loop() {
     update_moisture_data();
     update_pH_data();
 
-    radio.write(transmitter_data, sizeof(transmitter_data)); 
+    radio.write(&transmitter_data, sizeof(transmitter_data)); 
 
     // Serial.printf("pH data: %f, %f, %f, %f\n", transmitter_data[0], transmitter_data[1], transmitter_data[2], transmitter_data[3]);
     // Serial.printf("moisture data: %f, %f, %f, %f\n", transmitter_data[4], transmitter_data[5], transmitter_data[6], transmitter_data[7]);

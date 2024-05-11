@@ -90,6 +90,7 @@ void setup() {
   pinMode(dirPin, OUTPUT);
   digitalWrite(dirPin, HIGH); //fix speed
 
+
   //dc(auger)
   pinMode(pwm0,OUTPUT); 
   pinMode(dir0,OUTPUT); 
@@ -258,10 +259,12 @@ void stepper_cb(const std_msgs::Float32MultiArray &input_msg) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void loop() {
+  screw_loop();
   bool rx_flag = radio.available();
+  radio.startListening();
   if (rx_flag) {
     float transmitter_data[8];
-    radio.read(transmitter_data, sizeof(transmitter_data)); //read data received from transmitter
+    radio.read(&transmitter_data, sizeof(transmitter_data)); //read data received from transmitter
     science_data_msg.data[0] = transmitter_data[0]; science_data_msg.data[1] = transmitter_data[1]; science_data_msg.data[2] = transmitter_data[2]; science_data_msg.data[3] = transmitter_data[3];
     science_data_msg.data[4] = transmitter_data[4]; science_data_msg.data[5] = transmitter_data[5]; science_data_msg.data[6] = transmitter_data[6]; science_data_msg.data[7] = transmitter_data[7];  
     science_pub.publish(&science_data_msg);
