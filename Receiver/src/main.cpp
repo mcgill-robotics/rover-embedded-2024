@@ -132,16 +132,16 @@ unsigned long geiger_loop() {
 // position:cuvette mapping -> 0:1, 2:2, 4:3, 6:4
 void update_geiger() {
   if (stepper_position == 0) { 
-    science_data_msg.data[8] = geiger_loop();
+    science_data_msg.data[0] = geiger_loop();
     std::ofstream csv_file_three;
     csv_file_three.open("geiger.csv");
     csv_file_three << science_data_msg.data[8] << "\n";
     csv_file_three.close();
 
     } // 3 csv
-  else if (stepper_position == 2) { science_data_msg.data[9] = geiger_loop();}
-  else if (stepper_position == 4) { science_data_msg.data[10] = geiger_loop();}
-  else if (stepper_position == 6) { science_data_msg.data[11] = geiger_loop();}
+  else if (stepper_position == 2) { science_data_msg.data[1] = geiger_loop();}
+  else if (stepper_position == 4) { science_data_msg.data[2] = geiger_loop();}
+  else if (stepper_position == 6) { science_data_msg.data[3] = geiger_loop();} // geige,r moiste ph
 }
 
 /////////////////////////   STEPPER/CAROUSEL CONTROL   ////////////////////////////////////////
@@ -309,8 +309,8 @@ void loop() {
   if (rx_flag) {
     float transmitter_data[8];
     receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
-    science_data_msg.data[0] = transmitter_data[0]; science_data_msg.data[1] = transmitter_data[1]; science_data_msg.data[2] = transmitter_data[2]; science_data_msg.data[3] = transmitter_data[3];
-    science_data_msg.data[4] = transmitter_data[4]; science_data_msg.data[5] = transmitter_data[5]; science_data_msg.data[6] = transmitter_data[6]; science_data_msg.data[7] = transmitter_data[7];  
+    science_data_msg.data[4] = transmitter_data[0]; science_data_msg.data[5] = transmitter_data[1]; science_data_msg.data[6] = transmitter_data[2]; science_data_msg.data[7] = transmitter_data[3];
+    science_data_msg.data[8] = transmitter_data[4]; science_data_msg.data[9] = transmitter_data[5]; science_data_msg.data[10] = transmitter_data[6]; science_data_msg.data[11] = transmitter_data[7];  
     science_pub.publish(&science_data_msg);
     nh.spinOnce();
     delay(100);

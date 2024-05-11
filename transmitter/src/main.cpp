@@ -97,10 +97,10 @@ void update_pH_data() {
 
     std::ofstream csv_number_one;
     csv_number_one.open("phValue.csv");
-    transmitter_data[0] = phValue0; /// 1 csv
-    transmitter_data[1] = phValue1;
-    transmitter_data[2] = phValue2;
-    transmitter_data[3] = phValue3;
+    transmitter_data[4] = phValue0; /// 1 csv
+    transmitter_data[5] = phValue1;
+    transmitter_data[6] = phValue2;
+    transmitter_data[7] = phValue3;
     csv_number_one << transmitter_data[0] << "\n";
     csv_number_one.close();
 }
@@ -115,10 +115,10 @@ void update_moisture_data() {
     csv_number_two << sensorValue0 << "\n";
     csv_number_two.close();
     
-    transmitter_data[4] = sensorValue0;
-    transmitter_data[5] = sensorValue1;
-    transmitter_data[6] = sensorValue2;
-    transmitter_data[7] = sensorValue3;
+    transmitter_data[0] = sensorValue0;
+    transmitter_data[1] = sensorValue1;
+    transmitter_data[2] = sensorValue2;
+    transmitter_data[3] = sensorValue3;
 }
 
 void sendFloatArray(float *data, size_t length) {
