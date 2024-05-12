@@ -9,7 +9,6 @@
 #include <RF24.h>
 #include <iostream>
 #include <array>
-#include <fstream>
 
 // NRF
 RF24 radio(10, 9);       // pins: CE, CSN
@@ -112,6 +111,7 @@ void setup() {
   // attachInterrupt(digitalPinToInterrupt(top), ISR_top, CHANGE);
   // pinMode(bottom, INPUT_PULLUP);
   // attachInterrupt(digitalPinToInterrupt(bottom), ISR_bottom, CHANGE);
+
 }
 
 /////////////////////////   GEIGER CONTROL   ////////////////////////////////////////
@@ -133,10 +133,6 @@ unsigned long geiger_loop() {
 void update_geiger() {
   if (stepper_position == 0) { 
     science_data_msg.data[0] = geiger_loop();
-    std::ofstream csv_file_three;
-    csv_file_three.open("geiger.csv");
-    csv_file_three << science_data_msg.data[8] << "\n";
-    csv_file_three.close();
 
     } // 3 csv
   else if (stepper_position == 2) { science_data_msg.data[1] = geiger_loop();}
