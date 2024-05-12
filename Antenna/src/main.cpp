@@ -15,6 +15,8 @@ ros::NodeHandle nh;
 float antenna_gps_coords[2];
 std_msgs::Float32MultiArray antennaGPSDataMsg;
 ros::Publisher antennaGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
+std_msgs::Float32MultiArray antennaHeadingMsg;
+ros::Publisher antennaHeading_pub("/antennaHeading", &antennaHeadingMsg);
 
 void ros_loop();
 
@@ -89,7 +91,11 @@ void ros_loop()
 
     antennaGPSDataMsg.data_length = 2;
     antennaGPSDataMsg.data = temp;
-    antennaGPSData_pub.publish(&antennaGPSDataMsg);  
+    antennaGPSData_pub.publish(&antennaGPSDataMsg);
+
+    antennaHeadingMsg.data_length = 1;
+    antennaHeadingMsg.data = servo_angle;
+    antennaHeading_pub.publish(&antennaHeadingMsg);
 
     nh.spinOnce();
 }

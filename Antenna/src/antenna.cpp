@@ -21,6 +21,8 @@ void antenna_setup(){
     Serial.begin(9600);
     servo.attach(9);
     delay(3000);
+
+    servo.write(90);
     // antenna_heading_params[0]=0; --- hardset for testing
     // antenna_heading_params[1]=0;
     // antenna_heading_params[2]=0;
