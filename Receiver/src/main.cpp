@@ -16,27 +16,27 @@ const byte address[6] = "00001";
 uint32_t lastTime = 0;
 float transmitter_data[8]; // data received(pH and moisture)
 
-//DC motors(0 for screw(up/down), 1 for auger(soil colletion))
-const int pwm0 = 2;   //analogWrite pwm value between 0-255 for speed
-const int dir0 = 3;   //digitalWrite dir value HIGH/LOW for direction
-const int pwm1 = 4;  
+//DC motors
+const int pwm0 = 2;   // screw
+const int dir0 = 3;  
+const int pwm1 = 4;   // auger
 const int dir1 = 5;  
-int screw_counter = 0;  //initial height is 0
-unsigned long last_time;
-bool isMotorRunning = false;
-#define CONTROL_LOOP_PERIOD_MS 10
-bool up = true;       //true if auger hasn't hit top yet
-bool down = true;     //true if auger hasn't hit bottom yet
 
-// //limit switch
-// const int top = 11;     //top limit switch
-// const int bottom = 12;  //bottom limit switch
-// void ISR_top();
-// void ISR_bottom();
+//Limit switches
+const int top = 17;      //top limit switch
+const int bottom = 18;   //bottom limit switch
+volatile unsigned long last_trigger_time_top = 0;
+volatile unsigned long last_trigger_time_bottom = 0;
+#define debounce_delay 100
+void ISR_top();
+void ISR_bottom();
+int pressed = 0;
+bool limit_top = false;     // true if at very top
+bool limit_bottom = false;  // true if at very bottom
 
 //stepper motor
-#define dirPin 1                //dirPin: digitalWrite dir value HIGH/LOW for direction
-#define stepPin 0              //stepPin: write HIGH then LOW for 1 step, use a for loop for multiple steps
+#define dirPin 0                //dirPin: digitalWrite dir value HIGH/LOW for direction
+#define stepPin 1              //stepPin: write HIGH then LOW for 1 step, use a for loop for multiple steps
 #define stepsPerRevolution 200  //number of steps per a full revolution
 int stepper_position = 0;       //the carousel position(even numbers are straight, odd are diagonal)
 
@@ -97,8 +97,6 @@ void setup() {
   //stepper
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
-  digitalWrite(dirPin, HIGH); //fix speed
-
 
   //dc(auger)
   pinMode(pwm0,OUTPUT); 
@@ -106,12 +104,11 @@ void setup() {
   pinMode(pwm1,OUTPUT); 
   pinMode(dir1,OUTPUT); 
 
-  // //limit switches
-  // pinMode(top, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(top), ISR_top, CHANGE);
-  // pinMode(bottom, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(bottom), ISR_bottom, CHANGE);
-
+  // limit switch
+  pinMode(top, INPUT_PULLUP);
+  pinMode(bottom, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(top), ISR_top, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(bottom), ISR_bottom, CHANGE);
 }
 
 /////////////////////////   GEIGER CONTROL   ////////////////////////////////////////
@@ -161,106 +158,67 @@ void rotate_stepper() {
 
 /////////////////////////   SCREW CONTROL(up/down)   ////////////////////////////////////////
 void screw_up() { //move screw UP until stopped or top limit switch is hit
-  isMotorRunning = true;
-  if (up == true) {
-    down = true;
+  while (!limit_top) {          // limit_top=false
+    limit_bottom = false;
     digitalWrite(dir0, HIGH);
-    analogWrite(pwm0, 20);
-    delay(50);
-    analogWrite(pwm0, 60);
-    delay(50); 
     analogWrite(pwm0, 100);
-    // delay(50); 
-    // analogWrite(pwm0, 200);
   }
-}
-
-void screw_down() { //move screw DOWN until stopped or bottom switch is hit
-  isMotorRunning = true;
-  if (down == true) {
-    up = true;
-    digitalWrite(dir0, LOW); 
-    analogWrite(pwm0, 20);
-    delay(50);
-    analogWrite(pwm0, 60);
-    delay(50); 
-    analogWrite(pwm0, 100);
-    // delay(50); 
-    // analogWrite(pwm0, 200);
-  }
-}
-
-void screw_stop() { //stops the screw 
-  isMotorRunning = false;
-  analogWrite(pwm0, 60);
+  digitalWrite(dir0, LOW);      // limit_top=true
+  analogWrite(pwm0, 100);
   delay(500);
-  analogWrite(pwm0, 20);
-  delay(500); 
   analogWrite(pwm0, 0);
 }
 
-void screw_loop() { //stops screw if at top/bottom limit
-  while (millis() - last_time < CONTROL_LOOP_PERIOD_MS) { 
-      last_time = millis(); }
-
-  if ( screw_counter <= -170000000) {  //lower limit: -170000000, upper limit: 31500000
-    analogWrite(pwm0 ,0);
-    down = false;
-    up = true;
+void screw_down() { //move screw DOWN until stopped or bottom switch is hit
+  while (!limit_bottom) {       // limit_bottom=false
+    limit_top = false;
+    digitalWrite(dir0, LOW);
+    analogWrite(pwm0, 100);
   }
-  else if (screw_counter >= 31500000 ) {
-    analogWrite(pwm0, 0);
-    up = false;
-    down = true;
+  digitalWrite(dir0, HIGH);     // limit_bottom=true
+  analogWrite(pwm0, 100);
+  delay(500);
+  analogWrite(pwm0, 0);
+}
+
+void screw_stop() { //stops the screw 
+  analogWrite(pwm0, 0);
+}
+
+/////////////////////////   Limit Switches   ////////////////////////////////////////
+void ISR_bottom() {
+  unsigned long now = millis();
+  if (now - last_trigger_time_bottom > debounce_delay) {
+    last_trigger_time_bottom = now;
+    if (digitalRead(bottom) == HIGH) {  //limit switch is HIGH when touched
+      limit_bottom = true; 
+    }
   }
-  else {
-    if (digitalRead(dir0) == HIGH && isMotorRunning) { screw_counter ++; }      //increment counter if moving up, decrement if down
-    else if (digitalRead(dir0) == LOW && isMotorRunning) { screw_counter --; }}
-} 
+}
 
-// void ISR_top() {  //top limit switch interrupt: moves the auger down a bit and stops
-//   digitalWrite(dir0, LOW);  
-//   analogWrite(pwm0, 100);
-//   delay(500);
-//   analogWrite(pwm0, 0);
-// }
-
-// void ISR_bottom() {  //bottom limit switch interrupt: moves the auger up a bit and stops
-//   digitalWrite(dir0, HIGH);  
-//   analogWrite(pwm0, 100);
-//   delay(500);
-//   analogWrite(pwm0, 0);
-// }
+void ISR_top() {
+  unsigned long now = millis();
+  if (now - last_trigger_time_top > debounce_delay) {
+    last_trigger_time_top = now;
+    if (digitalRead(top) == HIGH) {  //limit switch is HIGH when touched
+      limit_top = true;
+    }
+  }
+}
 
 /////////////////////////   AUGER CONTROL(soil collection)   ////////////////////////////////////////
 
 void auger_up() { //rotates auger CW for 15 sec
   digitalWrite(dir1, HIGH);
-  analogWrite(pwm1, 20);
-  delay(500);
-  analogWrite(pwm1, 60);
-  delay(500); 
   analogWrite(pwm1, 80);
-  delay(15000);
-  analogWrite(pwm1, 0);
 }
 
 void auger_down() { //rotates auger CCW for 15 sec
   digitalWrite(dir1, LOW); 
-  analogWrite(pwm1, 20);
-  delay(500);
-  analogWrite(pwm1, 60);
-  delay(500); 
   analogWrite(pwm1, 80);
-  delay(15000);
-  analogWrite(pwm1, 0);
 }
 
 void auger_stop() { //stops the auger 
-  analogWrite(pwm1, 60);
-  delay(500);
-  analogWrite(pwm1, 20);
-  delay(500); 
   analogWrite(pwm1, 0);
 }
 
@@ -291,7 +249,7 @@ void stepper_cb(const std_msgs::Float32MultiArray &input_msg) {
   stepper_pub.publish(&stepper_pos_msg);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////  NRF Receive data  ////////////////////////////
 void receiveFloatArray(float *data, size_t length) {
   byte *byteData = (byte *)data;
   size_t dataSize = length * sizeof(float);
@@ -299,9 +257,9 @@ void receiveFloatArray(float *data, size_t length) {
 }
 
 void loop() {
-  screw_loop();
   bool rx_flag = radio.available();
   radio.startListening();
+
   if (rx_flag) {
     float transmitter_data[8];
     receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
