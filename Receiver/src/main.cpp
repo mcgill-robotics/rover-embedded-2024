@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
 #include <ros.h> 
-#include "std_msgs/Float32.h"
-#include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Float64.h"
+#include "std_msgs/Float64MultiArray.h"
 
 #include <SPI.h>
 #include <nRF24L01.h>
@@ -51,22 +51,21 @@ void impulse() {counts++;}
 ros::NodeHandle nh;
 
 float science_data[12];
-std_msgs::Float32MultiArray science_data_msg;                                     //publisher for science data
+std_msgs::Float64MultiArray science_data_msg;                                     //publisher for science data
 ros::Publisher science_pub("/science_data", &science_data_msg);
 
 float stepper_pos[1];
-std_msgs::Float32MultiArray stepper_pos_msg;                                       //publisher for stepper position
+std_msgs::Float64MultiArray stepper_pos_msg;                                       //publisher for stepper position
 ros::Publisher stepper_pub("/stepper_position", &stepper_pos_msg);
 
-void auger_cb(const std_msgs::Float32MultiArray &input_msg);                       //subscriber for auger command
-ros::Subscriber<std_msgs:: Float32MultiArray> auger_sub("/augerCmd", auger_cb);
+void auger_cb(const std_msgs::Float64MultiArray &input_msg);                       //subscriber for auger command
+ros::Subscriber<std_msgs:: Float64MultiArray> auger_sub("/augerCmd", auger_cb);
 
-void stepper_cb(const std_msgs::Float32MultiArray &input_msg);                  //subscriber for carousel command
-ros::Subscriber<std_msgs:: Float32MultiArray> stepper_sub("/stepperCmd", stepper_cb);
+void stepper_cb(const std_msgs::Float64MultiArray &input_msg);                  //subscriber for carousel command
+ros::Subscriber<std_msgs:: Float64MultiArray> stepper_sub("/stepperCmd", stepper_cb);
 
 
 void setup() { 
-  Serial.begin(9600);
 
   //ROS
   nh.initNode();
@@ -76,6 +75,7 @@ void setup() {
   nh.subscribe(stepper_sub);
   nh.negotiateTopics();
   while (!nh.connected()) { nh.negotiateTopics(); }
+  Serial.begin(57600);
   science_data_msg.data_length = 12;
   science_data_msg.data = science_data;
   stepper_pos_msg.data_length =1;
@@ -128,13 +128,10 @@ unsigned long geiger_loop() {
 // updates the geiger data of the cuvette in front of the geiger sensor
 // position:cuvette mapping -> 0:1, 2:2, 4:3, 6:4
 void update_geiger() {
-  if (stepper_position == 0) { 
-    science_data_msg.data[0] = geiger_loop();
-
-    } // 3 csv
+  if (stepper_position == 0) { science_data_msg.data[0] = geiger_loop();}
   else if (stepper_position == 2) { science_data_msg.data[1] = geiger_loop();}
   else if (stepper_position == 4) { science_data_msg.data[2] = geiger_loop();}
-  else if (stepper_position == 6) { science_data_msg.data[3] = geiger_loop();} // geige,r moiste ph
+  else if (stepper_position == 6) { science_data_msg.data[3] = geiger_loop();} // geiger moiste ph
 }
 
 /////////////////////////   STEPPER/CAROUSEL CONTROL   ////////////////////////////////////////
@@ -224,7 +221,7 @@ void auger_stop() { //stops the auger
 
 /////////////////////////   AUGER/CAROUSEL CALLBACK FUNCTIONS   ////////////////////////////////////////
 
-void auger_cb(const std_msgs::Float32MultiArray &input_msg) {
+void auger_cb(const std_msgs::Float64MultiArray &input_msg) {
   int screw = input_msg.data[0];
   int auger = input_msg.data[1];
 
@@ -238,7 +235,7 @@ void auger_cb(const std_msgs::Float32MultiArray &input_msg) {
 }
 
 //rotates the stepper by 45 degrees to position indicated by input_msg, updates geiger data, publishes the new position
-void stepper_cb(const std_msgs::Float32MultiArray &input_msg) { 
+void stepper_cb(const std_msgs::Float64MultiArray &input_msg) { 
   //stepper_position: integer 0-7 is position of carousel
   //starts at pos 0 with cuvette #1 at geiger
   //pos 0/2/4/6 are diagonal to scan geiger, pos 1/3/5/7 are straight for dispensing dirt to cuvette
@@ -257,18 +254,18 @@ void receiveFloatArray(float *data, size_t length) {
 }
 
 void loop() {
-  bool rx_flag = radio.available();
-  radio.startListening();
+  // bool rx_flag = radio.available();
+  // radio.startListening();
 
-  if (rx_flag) {
-    float transmitter_data[8];
-    receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
-    science_data_msg.data[4] = transmitter_data[0]; science_data_msg.data[5] = transmitter_data[1]; science_data_msg.data[6] = transmitter_data[2]; science_data_msg.data[7] = transmitter_data[3];
-    science_data_msg.data[8] = transmitter_data[4]; science_data_msg.data[9] = transmitter_data[5]; science_data_msg.data[10] = transmitter_data[6]; science_data_msg.data[11] = transmitter_data[7];  
-    science_pub.publish(&science_data_msg);
-    nh.spinOnce();
-    delay(100);
-  }
+  // if (rx_flag) {
+  //   float transmitter_data[8];
+  //   receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
+  //   science_data_msg.data[4] = transmitter_data[0]; science_data_msg.data[5] = transmitter_data[1]; science_data_msg.data[6] = transmitter_data[2]; science_data_msg.data[7] = transmitter_data[3];
+  //   science_data_msg.data[8] = transmitter_data[4]; science_data_msg.data[9] = transmitter_data[5]; science_data_msg.data[10] = transmitter_data[6]; science_data_msg.data[11] = transmitter_data[7];  
+  //   science_pub.publish(&science_data_msg);
+  //   nh.spinOnce();
+  //   delay(100);
+  // }
 }
 
 
