@@ -1,1 +1,1 @@
-#define USE_ROS_FIRMWARE 1
+#define USE_ROS_FIRMWARE 0

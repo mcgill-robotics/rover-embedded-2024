@@ -107,8 +107,10 @@ void setup()
     // 43000 clicks for wrist pitch, 32580 for wrist roll
     // Only using 1 & 2 becase 1 & 3 conflicts
     // Could be 32768 since it's a power of 2
-    enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
-    enc2->initialize_encoder(0, 0, 43000, 2);
+    // enc1->initialize_encoder(0, 0, 32580, 1);
+    // new small servo estimate for resolution
+    enc1->initialize_encoder(0, 0, 43000, 1);
+    enc2->initialize_encoder(0, 0, 32580, 2);
     // enc3->initialize_encoder(0, 0, 43000, 3);
 
     // Initialize current sensors
@@ -131,9 +133,12 @@ void setup()
     mot3.initialize_motor(1, PWMPIN3, DIRPIN3, nSLEEP3, 5.0, 0.0);
 
     // Set motor configuration after initialization
-    mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
+    // Gear ratio needs to be set before angle limits so limits are scaled
     mot1.set_gear_ratio(2.0);
+    mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1._is_circular_joint = false;
+    mot2.set_gear_ratio(2.0);
+    mot2._is_circular_joint = true;
 
     // Limit Switches
     pinMode(LIM_1, INPUT);
@@ -172,9 +177,9 @@ void setup()
 
     // HOMING, only linear joints will be homed
     SerialUSB.println("HOMING");
-    brushed_board_homing();
-    while (!is_homed)
-        ;
+    // brushed_board_homing();
+    // while (!is_homed)
+    //     ;
     SerialUSB.println("DONE HOMING");
 }
 

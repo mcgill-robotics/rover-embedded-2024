@@ -16,7 +16,7 @@
 // CONFIGURATION
 #define PID_PERIOD_MS 100
 #define PID_PERIOD_US PID_PERIOD_MS * 1000
-#define HWSERIAL Serial2
+#define HWSERIAL Serial4
 #define DEBUG_PRINT 1
 
 #define OUTA_Pin ENCPIN1_1
@@ -129,7 +129,8 @@ void setup()
     // 43000 clicks for wrist pitch, 32580 for wrist roll
     // Only using 1 & 2 becase 1 & 3 conflicts
     // Could be 32768 since it's a power of 2
-    // enc1->initialize_encoder(0, 0, 32580, 1); // new small servo estimate for resolution
+    // enc1->initialize_encoder(0, 0, 32580, 1); 
+    // new small servo estimate for resolution
     enc1->initialize_encoder(0, 0, 43000, 1);
     enc2->initialize_encoder(0, 0, 32580, 2);
     // enc3->initialize_encoder(0, 0, 43000, 3);
@@ -158,7 +159,6 @@ void setup()
     mot1.set_gear_ratio(2.0);
     mot1.set_angle_limit_ps(wrist_pitch_max_angle, wrist_pitch_min_angle);
     mot1._is_circular_joint = false;
-
     mot2.set_gear_ratio(2.0);
     mot2._is_circular_joint = true;
 
@@ -419,7 +419,7 @@ void print_encoder_info()
 }
 
 void brushed_board_ros_loop()
-{
+{2
 #if DEBUG_PRINT == 1
     process_serial_cmd();
 #endif
@@ -439,31 +439,31 @@ void brushed_board_ros_loop()
     }
 
     // Feedback
-    arm_brushed_angle_ps[0] = mot1.get_current_angle_ps();
+    arm_brushed_angle_ps[0] = 0.0;
+    // arm_brushed_angle_ps[0] = mot3.get_current_angle_ps();
     arm_brushed_angle_ps[1] = mot2.get_current_angle_ps();
-    // arm_brushed_angle_ps[2] = mot3.get_current_angle_ps();
-    arm_brushed_angle_ps[2] = 0.0;
+    arm_brushed_angle_ps[2] = mot1.get_current_angle_ps();
 
     arm_brushed_fb_msg.data_length = 3;
     arm_brushed_fb_msg.data = arm_brushed_angle_ps;
     arm_brushed_fb_pub.publish(&arm_brushed_fb_msg);
 
     nh.spinOnce();
-    delay(1);
+    delay(2);
 }
 
 void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
-    // 0 is WP, 1 is WR, 2 is EE
-    arm_brushed_setpoint_ps[0] = input_msg.data[2];
+    // 0 is EE, 1 is WR, 2 is WP
+    arm_brushed_setpoint_ps[0] = input_msg.data[0];
     arm_brushed_setpoint_ps[1] = input_msg.data[1];
-    arm_brushed_setpoint_ps[2] = input_msg.data[0];
-    mot1.set_target_angle_ps(arm_brushed_setpoint_ps[0]);
+    arm_brushed_setpoint_ps[2] = input_msg.data[2];
+    mot1.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
     mot2.set_target_angle_ps(arm_brushed_setpoint_ps[1]);
-    HWSERIAL.printf("WP: %8.4f, WR: %8.4f, EE: %8.4f\n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
+    HWSERIAL.printf("EE: %8.4f, WR: %8.4f, WP: %8.4f, \n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
 
     // Motor 3 is controlled like a forklift, only up and down, range -1 to 1
     // mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
-    mot3.move_manual(arm_brushed_setpoint_ps[2]);
+    mot3.move_manual(arm_brushed_setpoint_ps[0]);
 }
 #endif // USE_ROS_FIRMWARE == 1
