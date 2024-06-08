@@ -355,9 +355,9 @@ void driver_motor::set_direction(uint8_t direction)
 	digitalWrite(_motor_dir_pin, direction);
 }
 
-void driver_motor::move_manual(uint32_t speed)
+void driver_motor::move_manual(float speed)
 {
-	uint32_t duty = abs(speed) * 255;
+	uint32_t duty = (uint32_t)(abs(speed) * 255.0);
 	if (speed < 0)
 	{
 		digitalWrite(_motor_dir_pin, !_forward_dir);
