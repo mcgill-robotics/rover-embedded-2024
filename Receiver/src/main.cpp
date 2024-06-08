@@ -66,7 +66,6 @@ ros::Subscriber<std_msgs::Float64MultiArray> stepper_sub("/stepperCmd", stepper_
 
 void setup()
 {
-
   // ROS
   nh.initNode();
   nh.advertise(science_pub);
@@ -317,6 +316,9 @@ void receiveFloatArray(float *data, size_t length)
 
 void loop()
 {
+  nh.spinOnce();
+  delay(1);
+
   // bool rx_flag = radio.available();
   // radio.startListening();
 

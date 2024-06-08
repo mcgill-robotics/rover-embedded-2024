@@ -161,6 +161,9 @@ void setup()
 
 void loop()
 {
+    nh.spinOnce();
+    delay(1);
+
     update_moisture_data();
     update_pH_data();
 
