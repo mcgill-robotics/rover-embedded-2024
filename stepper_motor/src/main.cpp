@@ -9,6 +9,7 @@
 ros::NodeHandle nh;
 float data[1];
 std_msgs::Float64MultiArray science_data;
+
 void sci_cb(const std_msgs::Float64MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float64MultiArray> sci_sub("/science", sci_cb);
 
