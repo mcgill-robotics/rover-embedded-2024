@@ -61,7 +61,8 @@ void driver_motor::initialize_motor(uint8_t direction_motor, uint8_t motor_pwn_p
 	pinMode(_motor_fault_pin, OUTPUT);
 
 	// TODO: is this not necessary for pid?
-	//  _pwm_setup(_motor_pwm_pin, _MAX_PWM_FREQUENCY); // Sets frequency of pwm
+	// Sets frequency of pwm
+	_pwm_setup(_PWM_FREQUENCY);
 
 	// 24V motor therefore max is 24 and min is -24
 	pid_instance = new PID(0.1, 24, -24, 2.0, 0, 0);
@@ -214,7 +215,7 @@ void driver_motor::closed_loop_control_tick()
 
 	// Output to motor
 	// 255 is the max PWM value, 24 is the max voltage
-	float pwm_output = abs(pid_output) * 255.0 / 24.0;
+	float pwm_output = abs(pid_output) * _PWM_OUTPUT_RESOLUTION / 24.0;
 
 	this->_pwm_write_duty(pwm_output);
 	return;
@@ -304,7 +305,6 @@ void driver_motor::torque_control(float motor_cur)
 /// @param resolution new resolution of the motor
 void driver_motor::_pwm_set_resolution(uint16_t resolution)
 {
-
 	analogWriteResolution(resolution);
 }
 
@@ -358,7 +358,7 @@ void driver_motor::set_direction(uint8_t direction)
 void driver_motor::move_manual(float speed)
 {
 	uint32_t duty = (uint32_t)(abs(speed) * 255.0);
-	if (speed < 0)
+	if (speed < 0.0f)
 	{
 		digitalWrite(_motor_dir_pin, !_forward_dir);
 		_pwm_write_duty(duty);

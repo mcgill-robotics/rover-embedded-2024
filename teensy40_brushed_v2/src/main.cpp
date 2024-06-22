@@ -35,8 +35,6 @@ void process_serial_cmd();
 void print_encoder_info();
 void brushed_board_homing();
 void brushed_board_loop();
-void brushed_board_dir_tester();
-void brushed_board_singe_setpoint_loop();
 
 void lim1ISR();
 void lim2ISR();
@@ -185,14 +183,8 @@ void setup()
 
 void loop()
 {
-#if BRUSHED_BOARD_CONFIG == CONFIG_NON_ROS
-    brushed_board_loop();
-#elif BRUSHED_BOARD_CONFIG == CONFIG_DIR_TESTER
-    brushed_board_dir_tester();
-#elif BRUSHED_BOARD_CONFIG == CONFIG_SINGLE_MOTOR_TESTER
     process_serial_cmd();
-    brushed_board_singe_setpoint_loop();
-#endif
+    brushed_board_loop();
 }
 
 void process_serial_cmd()
@@ -244,30 +236,6 @@ void process_serial_cmd()
         // Clear the string for the next command
         inputString = "";
         inputStringComplete = false;
-    }
-}
-
-void brushed_board_loop()
-{
-    delay(10);
-
-    if (stage)
-    {
-        SerialUSB.println("Already reached target position");
-    }
-    else
-    {
-        mot1.set_target_angle_ps(pos);
-        mot1.closed_loop_control_tick();
-        float enc1_angle_ps = mot1.get_current_angle_ps();
-        SerialUSB.printf("enc1_angle_ps: %8.4f \n", enc1_angle_ps);
-
-        if (enc1_angle_ps <= pos + tolerance && enc1_angle_ps >= pos - tolerance && stage == 0)
-        {
-            SerialUSB.println("Reached target position");
-            // pos = -60;
-            // stage++;
-        }
     }
 }
 
@@ -392,8 +360,8 @@ void print_encoder_info()
 
     // SerialUSB.printf("cur1_current: %8.4f, cur2_current: %8.4f, cur3_current: %8.4f ",
     //                  cur1_current, cur2_current, cur3_current);
-    SerialUSB.printf("cur1_voltage: %8.4f, cur2_voltage: %8.4f, cur3_voltage: %8.4f, ",
-                     smoothed_cur1_voltage, smoothed_cur2_voltage, smoothed_cur3_voltage);
+    // SerialUSB.printf("cur1_voltage: %8.4f, cur2_voltage: %8.4f, cur3_voltage: %8.4f, ",
+    //                  smoothed_cur1_voltage, smoothed_cur2_voltage, smoothed_cur3_voltage);
 
     // TEST ENCODER ------------------------------------------------------------------------------
 
@@ -409,104 +377,42 @@ void print_encoder_info()
     float enc1_angle_ps = mot1.get_current_angle_ps();
     float enc1_setpoint = mot1.get_target_angle_ps();
 
-    // float enc2_quad_enc_pos = mot2._encoder->_encoder->read();
-    // float enc2_angle_single = mot2._encoder->get_angle_single();
-    // float enc2_angle_multi = mot2._encoder->get_angle_multi();
+    float enc2_quad_enc_pos = mot2._encoder->_encoder->read();
+    float enc2_angle_single = mot2._encoder->get_angle_single();
+    float enc2_angle_es = mot2.get_current_angle_es();
+    float enc2_angle_ps = mot2.get_current_angle_ps();
+    float enc2_setpoint = mot2.get_target_angle_ps();
+
+    float enc2_angle_multi = mot2._encoder->get_angle_multi();
+
     // float enc3_quad_enc_pos = mot3._encoder->_encoder->read();
     // float enc3_angle_single = mot3._encoder->get_angle_single();
     // float enc3_angle_multi = mot3._encoder->get_angle_multi();
 
     SerialUSB.printf("enc1_quad_enc_pos: %8.4f, enc1_angle_single: %8.4f, enc1_angle_es: %8.4f, enc1_angle_ps: %8.4f, enc1_setpoint: %8.4f, ",
                      enc1_quad_enc_pos, enc1_angle_single, enc1_angle_es, enc1_angle_ps, enc1_setpoint);
+    SerialUSB.println();
+
+    SerialUSB.printf("enc2_quad_enc_pos: %8.4f, enc2_angle_single: %8.4f, enc2_angle_es: %8.4f, enc2_angle_ps: %8.4f, enc2_setpoint: %8.4f, ",
+                     enc2_quad_enc_pos, enc2_angle_single, enc2_angle_es, enc2_angle_ps, enc2_setpoint);
 
     // float enc1_rev = mot1._encoder->_encoder->getRevolution();
     // float enc1_hold_rev = mot1._encoder->_encoder->getHoldRevolution();
     // SerialUSB.printf("enc1_rev: %8.4f, enc1_hold_rev: %8.4f, ", enc1_rev, enc1_hold_rev);
-    if (enc1_angle_es <= 2881 && enc1_angle_es >= 2879)
-    {
-        SerialUSB.printf("\n2880 here^");
-        analogWrite(PWMPIN1, 0);
-        while (true)
-            ;
-    }
     SerialUSB.println();
 }
 
-void brushed_board_dir_tester()
+void brushed_board_loop()
 {
     delay(PID_PERIOD_MS);
 
-    // Run Motors
-    mot1._pwm_write_duty(180);
-    mot2._pwm_write_duty(60);
-    mot3._pwm_write_duty(60);
-
-    // Print Encoder Info
-    print_encoder_info();
-
-    // TEST GRAVITY COMPENSATION --------------------------------------------------------------------
-    // double output;
-    // current_rotation->setAngleRad(current_angle / 360 * 2 * PI);
-    // maintainStateProto(*current_rotation, &output);
-    // printf("current output: %8.4f\r\n", output);
-    // printf("Current voltage: %8.4f\n", output);
-    // if (output < 0)
-    // {
-    //     digitalWrite(DIR1, HIGH);
-    // }
-    // else
-    // {
-    //     digitalWrite(DIR1, LOW);
-    // }
-    // int analog_write_output = (output / 24) * 255;
-    // printf("Current analog output: %d\n", analog_write_output);
-    // analogWrite(PWM1, analog_write_output);
-
-    // ENCODER PINS TEST --------------------------------------------------------------------
-    // SerialUSB.printf("ENCPIN1_1: %d, ENCPIN1_2: %d ", digitalRead(ENCPIN1_1), digitalRead(ENCPIN1_2));
-    // SerialUSB.printf("ENCPIN2_1: %d, ENCPIN2_2: %d ", digitalRead(ENCPIN2_1), digitalRead(ENCPIN2_2));
-    // SerialUSB.printf("ENCPIN3_1: %d, ENCPIN3_2: %d\n", digitalRead(ENCPIN3_1), digitalRead(ENCPIN3_2));
-    // if (digitalRead(OUTA_Pin) == LOW) // If OUTA is LOW
-    // {
-    //     if (digitalRead(OUTB_Pin) == LOW) // If OUTB is also LOW... CCK
-    //     {
-    //         while (digitalRead(OUTB_Pin) == LOW)
-    //         {
-    //         }; // wait for OUTB to go HIGH
-    //         counter--;
-    //         while (digitalRead(OUTA_Pin) == LOW)
-    //         {
-    //         };         // wait for OUTA to go HIGH
-    //         delay(10); // wait for some more time
-    //     }
-    //     else if (digitalRead(OUTB_Pin) == HIGH) // If OUTB is HIGH
-    //     {
-    //         while (digitalRead(OUTB_Pin) == HIGH)
-    //         {
-    //         }; // wait for OUTB to go LOW.. CK
-    //         counter++;
-    //         while (digitalRead(OUTA_Pin) == LOW)
-    //         {
-    //         }; // wait for OUTA to go HIGH
-    //         while (digitalRead(OUTB_Pin) == LOW)
-    //         {
-    //         };         // wait for OUTB to go HIGH
-    //         delay(10); // wait for some more time
-    //     }
-
-    //     if (counter < 0)
-    //         counter = 0;
-    //     if (counter > 180)
-    //         counter = 180;
-    // }
-    // SerialUSB.println(counter);
-}
-
-void brushed_board_singe_setpoint_loop()
-{
-    delay(PID_PERIOD_MS);
-
-    mot1.closed_loop_control_tick();
+    // mot1.closed_loop_control_tick();
+    mot1._pwm_set_resolution(8);
+    mot2._pwm_set_resolution(8);
+    mot3._pwm_set_resolution(8);
+    mot1.move_manual(1);
+    mot2.move_manual(1);
+    mot3.move_manual(0.5);
 
     // Print Encoder Info
     print_encoder_info();

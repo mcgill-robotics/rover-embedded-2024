@@ -22,8 +22,9 @@
 #include <memory>
 
 #define _MAX_PWM_FREQUENCY 146484.38
-#define _PWM_BIT_RESOLUTION 10
-#define _PWM_OUTPUT_RESOLUTION 1023
+#define _PWM_FREQUENCY 1000
+#define _PWM_BIT_RESOLUTION 8
+#define _PWM_OUTPUT_RESOLUTION 255.0
 
 class driver_motor
 {

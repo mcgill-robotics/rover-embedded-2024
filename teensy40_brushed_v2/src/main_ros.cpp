@@ -10,6 +10,7 @@
 #include <ros.h>
 #include "std_msgs/Float32.h"
 #include "std_msgs/Float32MultiArray.h"
+#include <std_msgs/String.h>
 
 #include <memory>
 
@@ -31,6 +32,9 @@ void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
 std_msgs::Float32MultiArray arm_brushed_fb_msg;
 ros::Publisher arm_brushed_fb_pub("/armBrushedFb", &arm_brushed_fb_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> arm_brushed_cmd_sub("/armBrushedCmd", arm_brushed_cmd_cb);
+std_msgs::String debug_msg;
+ros::Publisher debug_pub("debug_topic", &debug_msg);
+char message_buffer[256];
 
 // DUMB POINTERS
 driver_motor mot1;
@@ -82,6 +86,31 @@ float moving_average(float new_reading, float *buffer, int buffer_size, int *buf
     return sum / buffer_size;
 }
 
+// Buffer for formatted messages
+
+// ros_printf function
+void ros_printf(const char *format, ...)
+{
+    // Initialize the variable argument list
+    va_list args;
+    va_start(args, format);
+
+    // Format the message and store it in message_buffer
+    vsnprintf(message_buffer, sizeof(message_buffer), format, args);
+
+    // End the variable argument list
+    va_end(args);
+
+    // Assign the formatted message to debug_msg.data
+    debug_msg.data = message_buffer;
+
+    // Publish the debug message
+    debug_pub.publish(&debug_msg);
+
+    // Spin once to handle callbacks
+    nh.spinOnce();
+}
+
 // Ensure counter is initialized
 int counter = 0;
 
@@ -108,8 +137,11 @@ void setup()
     HWSERIAL.println("Serial port initialized");
     // Initialize ROS
     nh.initNode();
+
     nh.advertise(arm_brushed_fb_pub);
     nh.subscribe(arm_brushed_cmd_sub);
+    nh.advertise(debug_pub);
+
     nh.negotiateTopics();
     while (!nh.connected())
     {
@@ -412,6 +444,11 @@ void print_encoder_info()
     HWSERIAL.printf("enc2_quad_enc_pos: %8.4f, enc2_angle_single: %8.4f, enc2_angle_es: %8.4f, enc2_angle_ps: %8.4f, enc2_setpoint: %8.4f, ",
                     enc2_quad_enc_pos, enc2_angle_single, enc2_angle_es, enc2_angle_ps, enc2_setpoint);
 
+    ros_printf("enc1_quad_enc_pos: %8.4f, enc1_angle_single: %8.4f, enc1_angle_es: %8.4f, enc1_angle_ps: %8.4f, enc1_setpoint: %8.4f, ",
+               enc1_quad_enc_pos, enc1_angle_single, enc1_angle_es, enc1_angle_ps, enc1_setpoint);
+    ros_printf("enc2_quad_enc_pos: %8.4f, enc2_angle_single: %8.4f, enc2_angle_es: %8.4f, enc2_angle_ps: %8.4f, enc2_setpoint: %8.4f, ",
+               enc2_quad_enc_pos, enc2_angle_single, enc2_angle_es, enc2_angle_ps, enc2_setpoint);
+
     // float enc1_rev = mot1._encoder->_encoder->getRevolution();
     // float enc1_hold_rev = mot1._encoder->_encoder->getHoldRevolution();
     // HWSERIAL.printf("enc1_rev: %8.4f, enc1_hold_rev: %8.4f, ", enc1_rev, enc1_hold_rev);
@@ -430,11 +467,15 @@ void brushed_board_ros_loop()
     {
         counter = current_time;
         mot1.closed_loop_control_tick();
-        mot2.closed_loop_control_tick();
+        // mot2.closed_loop_control_tick();
         // mot3.closed_loop_control_tick();
         loop_last_time = current_time;
 #if DEBUG_PRINT == 1
         print_encoder_info();
+        ros_printf("EE: %8.4f, WR: %8.4f, WP: %8.4f, \n",
+                   arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
+        ros_printf("EE dir_pin: %d, WR dir_pin: %d, WP dir_pin: %d, \n",
+                   mot3._motor_dir_pin, mot2._motor_dir_pin, mot1._motor_dir_pin);
 #endif
     }
 
@@ -463,9 +504,19 @@ void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
     mot1.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
     // mot2.set_target_angle_ps(arm_brushed_setpoint_ps[1]);
     // mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
-    mot2.move_manual((float)arm_brushed_setpoint_ps[1] / 100.0f);
-    mot3.move_manual((float)arm_brushed_setpoint_ps[0] / 100.0f);
+    // if (arm_brushed_setpoint_ps[1] > 0.0)
+    // {
+    //     mot2.set_direction(mot2._forward_dir);
+    // }
+    // else
+    // {
+    //     mot2.set_direction(!mot2._forward_dir);
+    // }
+    mot2.set_direction(mot2._forward_dir);
+    mot2.move_manual(((float)arm_brushed_setpoint_ps[1]) / 100.0f);
+    mot3.move_manual(((float)arm_brushed_setpoint_ps[0]) / 100.0f);
 
     HWSERIAL.printf("EE: %8.4f, WR: %8.4f, WP: %8.4f, \n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
+    ros_printf("EE: %8.4f, WR: %8.4f, WP: %8.4f, \n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
 }
 #endif // USE_ROS_FIRMWARE == 1
