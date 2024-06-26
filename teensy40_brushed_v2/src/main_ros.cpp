@@ -33,7 +33,7 @@ std_msgs::Float32MultiArray arm_brushed_fb_msg;
 ros::Publisher arm_brushed_fb_pub("/armBrushedFb", &arm_brushed_fb_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> arm_brushed_cmd_sub("/armBrushedCmd", arm_brushed_cmd_cb);
 std_msgs::String debug_msg;
-ros::Publisher debug_pub("debug_topic", &debug_msg);
+ros::Publisher debug_pub("debug_topic_brushed", &debug_msg);
 char message_buffer[256];
 
 // DUMB POINTERS
@@ -89,7 +89,7 @@ float moving_average(float new_reading, float *buffer, int buffer_size, int *buf
 // Buffer for formatted messages
 
 // ros_printf function
-void ros_printf(const char *format, ...)
+static void ros_printf(const char *format, ...)
 {
     // Initialize the variable argument list
     va_list args;
