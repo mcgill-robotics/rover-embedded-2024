@@ -101,6 +101,7 @@ void screw_up()
 {
   ros_printf("screw_up()");
   // Safety check
+  top_limit_switch_pressed = digitalRead(top_limit_switch_pin) == LOW;
   if (top_limit_switch_pressed)
   {
     ros_printf("Top limit switch pressed. Stopping screw.");
@@ -116,6 +117,7 @@ void screw_down()
 {
   ros_printf("screw_down()");
   // Safety check
+  bottom_limit_switch_pressed = digitalRead(bottom_limit_switch_pin) == LOW;
   if (bottom_limit_switch_pressed)
   {
     ros_printf("Bottom limit switch pressed. Stopping screw.");
@@ -161,9 +163,10 @@ void ISR_bottom()
   if (now - last_trigger_time_bottom > debounce_delay)
   {
     last_trigger_time_bottom = now;
-    if (digitalRead(bottom_limit_switch_pin) == HIGH)
+    if (digitalRead(bottom_limit_switch_pin) == LOW)
     {
       bottom_limit_switch_pressed = true;
+      ros_printf("Bottom limit switch pressed. Stopping screw.");
       screw_stop();
     }
     else
@@ -179,9 +182,10 @@ void ISR_top()
   if (now - last_trigger_time_top > debounce_delay)
   {
     last_trigger_time_top = now;
-    if (digitalRead(top_limit_switch_pin) == HIGH)
+    if (digitalRead(top_limit_switch_pin) == LOW)
     {
       top_limit_switch_pressed = true;
+      ros_printf("Top limit switch pressed. Stopping screw.");
       screw_stop();
     }
     else
@@ -270,6 +274,7 @@ void setup()
 
 // ROS
 #if USE_ROS_FIRMWARE == 0
+  SerialUSB.begin(115200);
 #elif USE_ROS_FIRMWARE == 1
   nh.initNode();
 
