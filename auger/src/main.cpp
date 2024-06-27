@@ -7,6 +7,8 @@
 
 //-------------------  ROS   ---------------------
 ros::NodeHandle nh;
+void sci_cb(const std_msgs::Float64MultiArray &input_msg);
+ros::Subscriber<std_msgs::Float64MultiArray> sci_sub("/science", sci_cb);
 void aug_cb(const std_msgs::Float64MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float64MultiArray> aug_sub("/auger", aug_cb);
 std_msgs::String debug_msg;
@@ -20,7 +22,14 @@ void auger_up();
 void auger_down();
 void auger_stop();
 
-//-------------------  DC motors   ---------------------
+//-------------------  CONFIG   ---------------------
+// steps/revolutions: run stepsPerRev for loop for # of steps to take
+// number of steps per 1 rev
+const int stepsPerRevolution = 200;
+const int STEPPER_STEP_PIN = 1;
+const int STEPPER_DIR_PIN = 0;
+const int STEPPER_DELAY = 7000;
+
 // screw
 const int pwm0 = 2;
 const int dir0 = 3;
@@ -35,6 +44,8 @@ const int top_limit_switch_pin = 17;    // top limit switch
 const int bottom_limit_switch_pin = 18; // bottom limit switch
 volatile unsigned long last_trigger_time_top = 0;
 volatile unsigned long last_trigger_time_bottom = 0;
+
+float stepper_current_angle = 0.0;
 
 volatile bool top_limit_switch_pressed = false;    // true if at very top
 volatile bool bottom_limit_switch_pressed = false; // true if at very bottom
@@ -92,6 +103,29 @@ void aug_cb(const std_msgs::Float64MultiArray &input_msg)
   else if (input_msg.data[1] == 1)
   {
     auger_up();
+  }
+}
+
+// Every publish to /science will rotate the stepper motor 0.25 revolutions
+void sci_cb(const std_msgs::Float64MultiArray &input_msg)
+{
+  // Calculate the total number of steps required for 0.25 revolutions
+  int totalSteps = static_cast<int>(0.25 * stepsPerRevolution);
+
+  // Loop through each step
+  for (int i = 0; i < totalSteps; i++)
+  {
+    // Step the motor
+    digitalWrite(STEPPER_STEP_PIN, HIGH);
+    delayMicroseconds(STEPPER_DELAY);
+    digitalWrite(STEPPER_STEP_PIN, LOW);
+    delayMicroseconds(STEPPER_DELAY);
+
+    // Increment the current angle based on the step
+    stepper_current_angle += 360.0f / static_cast<float>(stepsPerRevolution);
+
+    // Ensure the angle stays within the 0-360 range
+    stepper_current_angle = fmod(stepper_current_angle, 360.0f);
   }
 }
 
@@ -279,6 +313,7 @@ void setup()
   nh.initNode();
 
   nh.subscribe(aug_sub);
+  nh.subscribe(sci_sub);
   nh.advertise(debug_pub);
 
   nh.negotiateTopics();
