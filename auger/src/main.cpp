@@ -7,10 +7,10 @@
 
 //-------------------  ROS   ---------------------
 ros::NodeHandle nh;
-void sci_cb(const std_msgs::Float64MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float64MultiArray> sci_sub("/science", sci_cb);
+void stepper_cb(const std_msgs::Float64MultiArray &input_msg);
+ros::Subscriber<std_msgs::Float64MultiArray> stepper_sub("/stepperCmd", stepper_cb);
 void aug_cb(const std_msgs::Float64MultiArray &input_msg);
-ros::Subscriber<std_msgs::Float64MultiArray> aug_sub("/auger", aug_cb);
+ros::Subscriber<std_msgs::Float64MultiArray> aug_sub("/augerCmd", aug_cb);
 std_msgs::String debug_msg;
 ros::Publisher debug_pub("debug_topic_auger", &debug_msg);
 char message_buffer[256];
@@ -107,7 +107,7 @@ void aug_cb(const std_msgs::Float64MultiArray &input_msg)
 }
 
 // Every publish to /science will rotate the stepper motor 0.25 revolutions
-void sci_cb(const std_msgs::Float64MultiArray &input_msg)
+void stepper_cb(const std_msgs::Float64MultiArray &input_msg)
 {
   // Calculate the total number of steps required for 0.25 revolutions
   int totalSteps = static_cast<int>(0.25 * stepsPerRevolution);
@@ -313,7 +313,7 @@ void setup()
   nh.initNode();
 
   nh.subscribe(aug_sub);
-  nh.subscribe(sci_sub);
+  nh.subscribe(stepper_sub);
   nh.advertise(debug_pub);
 
   nh.negotiateTopics();
