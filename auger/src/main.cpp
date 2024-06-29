@@ -5,6 +5,12 @@
 #include "std_msgs/Float64MultiArray.h"
 #include <std_msgs/String.h>
 
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <iostream>
+#include <array>
+
 //-------------------  ROS   ---------------------
 ros::NodeHandle nh;
 void stepper_cb(const std_msgs::Float64MultiArray &input_msg);
@@ -14,6 +20,10 @@ ros::Subscriber<std_msgs::Float64MultiArray> aug_sub("/augerCmd", aug_cb);
 std_msgs::String debug_msg;
 ros::Publisher debug_pub("debug_topic_auger", &debug_msg);
 char message_buffer[256];
+
+float science_data[12];
+std_msgs::Float64MultiArray science_data_msg;
+ros::Publisher science_pub("/science_data", &science_data_msg);
 
 void screw_up();
 void screw_down();
@@ -37,6 +47,12 @@ const int dir0 = 3;
 // auger
 const int pwm1 = 4;
 const int dir1 = 5;
+
+// NRF
+RF24 radio(10, 9); // pins: CE, CSN
+const byte address[6] = "00001";
+uint32_t lastTime = 0;
+float transmitter_data[8]; // data received(pH and moisture)
 
 //-------------------   limit switch    ---------------------
 #define debounce_delay 100
@@ -294,6 +310,38 @@ void process_serial_aug_command()
   }
 }
 
+void receiveFloatArray(float *data, size_t length)
+{
+  ros_printf("%s", __func__);
+  byte *byteData = (byte *)data;
+  size_t dataSize = length * sizeof(float);
+  radio.read(byteData, dataSize);
+}
+
+void radio_loop()
+{
+  ros_printf("%s", __func__);
+  bool rx_flag = radio.available();
+  radio.startListening();
+
+  if (rx_flag)
+  {
+    float transmitter_data[8];
+    receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
+    science_data_msg.data[4] = transmitter_data[0];
+    science_data_msg.data[5] = transmitter_data[1];
+    science_data_msg.data[6] = transmitter_data[2];
+    science_data_msg.data[7] = transmitter_data[3];
+    science_data_msg.data[8] = transmitter_data[4];
+    science_data_msg.data[9] = transmitter_data[5];
+    science_data_msg.data[10] = transmitter_data[6];
+    science_data_msg.data[11] = transmitter_data[7];
+    science_pub.publish(&science_data_msg);
+    nh.spinOnce();
+    delay(100);
+  }
+};
+
 //-------------------  Application  ---------------------
 void setup()
 {
@@ -303,10 +351,20 @@ void setup()
   pinMode(pwm1, OUTPUT);
   pinMode(dir1, OUTPUT);
 
+  // stepper
+  pinMode(STEPPER_DIR_PIN, OUTPUT);
+  pinMode(STEPPER_STEP_PIN, OUTPUT);
+
+  // nrf
+  radio.begin();
+  radio.openReadingPipe(0, address);
+  radio.setPALevel(RF24_PA_HIGH);
+  radio.startListening();
+  lastTime = millis();
+
   // limit switch
   pinMode(bottom_limit_switch_pin, INPUT_PULLUP);
   pinMode(top_limit_switch_pin, INPUT_PULLUP);
-
   // Attach interrupts for both limit switches
   attachInterrupt(digitalPinToInterrupt(bottom_limit_switch_pin), ISR_bottom, CHANGE);
   attachInterrupt(digitalPinToInterrupt(top_limit_switch_pin), ISR_top, CHANGE);
@@ -336,5 +394,6 @@ void loop()
   process_serial_aug_command();
 #elif USE_ROS_FIRMWARE == 1
   nh.spinOnce();
+  radio_loop();
 #endif
 }
