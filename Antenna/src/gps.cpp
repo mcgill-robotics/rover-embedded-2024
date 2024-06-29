@@ -7,8 +7,7 @@
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
 
-
-extern float base_gps_coords[2] = {0,0};
+extern float base_gps_coords[2] = {0, 0};
 
 static const int RXPin = 4, TXPin = 3;
 static const uint32_t GPSBaud = 9600;
@@ -19,7 +18,7 @@ TinyGPSPlus gps;
 
 // The serial connection to the GPS device
 // SoftwareSerial ss(RXPin, TXPin);
- 
+
 void gps_setup()
 {
     // Empty
@@ -28,18 +27,18 @@ void gps_setup()
 void gps_loop()
 {
     // This displays information every time a new sentence is correctly encoded.
-    
+
     while (Serial1.available() > 0)
     {
         if (gps.encode(Serial1.read()))
         {
-            displayInfo(); //For Debugging
-            
+            displayInfo(); // For Debugging
+
             //--------------------
             float lat = (float)gps.location.lat();
             float lng = (float)gps.location.lng();
-            base_gps_coords[0]=lat;
-            base_gps_coords[1]=lng;
+            base_gps_coords[0] = lat;
+            base_gps_coords[1] = lng;
         }
     }
 
@@ -48,7 +47,8 @@ void gps_loop()
         Serial.println(F("No GPS detected: check wiring."));
         base_gps_coords[0] = 0;
         base_gps_coords[1] = 0; // gps returning 0,0 should be seen as an error code
-        while (true); // program gives up on you
+        while (true)
+            ; // program gives up on you
     }
 }
 

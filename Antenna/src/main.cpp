@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ros.h> 
+#include <ros.h>
 #include "std_msgs/Float32.h"
 #include "std_msgs/Float32MultiArray.h"
 
@@ -8,7 +8,6 @@
 #include <iostream>
 
 #define CONTROL_LOOP_PERIOD_MS 10
-
 
 // ROS
 ros::NodeHandle nh;
@@ -29,7 +28,6 @@ ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/a
 void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> rover_gps_cmd_sub("/roverGPSData", rover_gps_cmd_cb); // used to be /roverGPSFeedCmd
 
-
 // DECLARATIONS
 extern void antenna_setup();
 extern void antenna_loop();
@@ -37,7 +35,6 @@ extern float rover_coords[2];
 extern float antenna_heading_params[4];
 extern bool isOveriden;
 extern float servo_angle[1];
-
 
 static const uint32_t GPSBaud = 9600;
 extern float base_gps_coords[2];
@@ -48,23 +45,26 @@ extern double sin_theta;
 
 unsigned long last_time;
 
-void setup(){
+void setup()
+{
   // ROS Setup
   nh.initNode();
+
   nh.advertise(antennaGPSData_pub);
 
   nh.subscribe(antenna_set_initial_rover_cmd_sub);
   nh.subscribe(antenna_overide_heading_cmd_sub);
   nh.subscribe(rover_gps_cmd_sub);
+
   nh.negotiateTopics();
-  
   while (!nh.connected())
   {
     nh.negotiateTopics();
   }
 
-  Serial1.begin(GPSBaud);
-  while (!Serial1);
+  // Serial1.begin(GPSBaud);
+  // while (!Serial1)
+  //   ;
 
   antenna_setup();
   // gps_setup();
@@ -72,50 +72,53 @@ void setup(){
   last_time = millis();
 }
 
-void loop(){
-  while(millis() - last_time < CONTROL_LOOP_PERIOD_MS);
+void loop()
+{
+  while (millis() - last_time < CONTROL_LOOP_PERIOD_MS)
+    ;
   last_time = millis();
 
-  gps_loop();
+  // gps_loop();
   antenna_heading_params[0] = base_gps_coords[0];
   antenna_heading_params[1] = base_gps_coords[1];
-  
+
   antenna_loop();
   ros_loop();
 }
 
 void ros_loop()
 {
-    // Publish Antenna GPS Coords
-    float temp[2] = {antenna_heading_params[0],antenna_heading_params[1]};
+  // Publish Antenna GPS Coords
+  float temp[2] = {antenna_heading_params[0], antenna_heading_params[1]};
 
-    antennaGPSDataMsg.data_length = 2;
-    antennaGPSDataMsg.data = temp;
-    antennaGPSData_pub.publish(&antennaGPSDataMsg);
+  antennaGPSDataMsg.data_length = 2;
+  antennaGPSDataMsg.data = temp;
+  antennaGPSData_pub.publish(&antennaGPSDataMsg);
 
-    antennaHeadingMsg.data_length = 1;
-    antennaHeadingMsg.data = servo_angle;
-    antennaHeading_pub.publish(&antennaHeadingMsg);
+  antennaHeadingMsg.data_length = 1;
+  antennaHeadingMsg.data = servo_angle;
+  antennaHeading_pub.publish(&antennaHeadingMsg);
 
-    nh.spinOnce();
+  nh.spinOnce();
 }
 
 void antenna_set_initial_rover_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
   antenna_heading_params[2] = input_msg.data[0];
-  antenna_heading_params[3] = input_msg.data[1]; 
+  antenna_heading_params[3] = input_msg.data[1];
 }
 
 void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
   rover_coords[0] = input_msg.data[0];
-  rover_coords[1] = input_msg.data[1];    
+  rover_coords[1] = input_msg.data[1];
 }
 
 void antenna_overide_heading_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
   isOveriden = input_msg.data[0];
-  if(isOveriden){
+  if (isOveriden)
+  {
     servo_angle[0] = input_msg.data[1];
   }
 }
