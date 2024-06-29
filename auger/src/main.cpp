@@ -79,6 +79,7 @@ static void ros_printf(const char *format, ...)
 // first element for screw(up/down), second for auger(soil drill)
 void aug_cb(const std_msgs::Float64MultiArray &input_msg)
 {
+  // Screw is the linear actuator
   if (input_msg.data[0] == 0)
   {
     screw_stop();
@@ -92,6 +93,7 @@ void aug_cb(const std_msgs::Float64MultiArray &input_msg)
     screw_up();
   }
 
+  // Auger is the drill
   if (input_msg.data[1] == 0)
   {
     auger_stop();
@@ -187,6 +189,7 @@ void auger_up()
 void auger_stop()
 {
   ros_printf("auger_stop()");
+  digitalWrite(dir1, LOW);
   analogWrite(pwm1, 0);
 }
 
@@ -297,6 +300,8 @@ void setup()
   // DC motor
   pinMode(pwm0, OUTPUT);
   pinMode(dir0, OUTPUT);
+  pinMode(pwm1, OUTPUT);
+  pinMode(dir1, OUTPUT);
 
   // limit switch
   pinMode(bottom_limit_switch_pin, INPUT_PULLUP);
