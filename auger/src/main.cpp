@@ -378,6 +378,7 @@ void setup()
   nh.subscribe(aug_sub);
   nh.subscribe(stepper_sub);
   nh.advertise(debug_pub);
+  nh.advertise(science_pub);
 
   nh.negotiateTopics();
   while (!nh.connected())
