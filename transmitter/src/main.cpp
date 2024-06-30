@@ -137,8 +137,10 @@ void sendFloatArray(float *data, size_t length)
 
 void setup()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
     lastTime = millis();
+
+    pinMode(LED_BUILTIN, OUTPUT);
 
     // NRF24
     radio.begin();
@@ -161,8 +163,9 @@ void setup()
 
 void loop()
 {
-    nh.spinOnce();
-    delay(1);
+    // nh.spinOnce();
+    // delay(1);
+    digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
 
     update_moisture_data();
     update_pH_data();
