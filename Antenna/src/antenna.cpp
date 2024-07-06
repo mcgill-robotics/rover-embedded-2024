@@ -13,8 +13,8 @@ bool firstRoverPos = false;
 bool isOveriden = false;
 
 double sin_theta = 0;
-extern float rover_coords[2] = {0, 0};                 // latitude, longitude - 0,0
-extern float antenna_heading_params[4] = {0, 0, 0, 0}; // latitude, longitude, initial rover pos
+float rover_coords[2] = {0, 0};                 // latitude, longitude - 0,0
+float antenna_heading_params[4] = {0, 0, 0, 0}; // latitude, longitude, initial rover pos
 
 void antenna_setup()
 {

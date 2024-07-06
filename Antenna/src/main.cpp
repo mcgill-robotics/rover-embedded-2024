@@ -7,7 +7,7 @@
 #include <math.h>
 #include <iostream>
 
-#define CONTROL_LOOP_PERIOD_MS 10
+#define CONTROL_LOOP_PERIOD_MS 5
 
 // ROS
 ros::NodeHandle nh;
