@@ -2,12 +2,13 @@
 #include <ros.h>
 #include "std_msgs/Float32.h"
 #include "std_msgs/Float32MultiArray.h"
+#include <std_msgs/String.h>
 
 #include "Servo.h"
 #include <math.h>
 #include <iostream>
 
-#define CONTROL_LOOP_PERIOD_MS 5
+#define CONTROL_LOOP_PERIOD_MS 10
 
 // ROS
 ros::NodeHandle nh;
@@ -17,6 +18,7 @@ ros::Publisher antennaGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
 std_msgs::Float32MultiArray antennaHeadingMsg;
 ros::Publisher antennaHeading_pub("/antennaHeading", &antennaHeadingMsg);
 
+void ros_setup();
 void ros_loop();
 
 void antenna_set_initial_rover_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
@@ -47,26 +49,9 @@ unsigned long last_time;
 
 void setup()
 {
-  // ROS Setup
-  nh.initNode();
 
-  nh.advertise(antennaGPSData_pub);
-
-  nh.subscribe(antenna_set_initial_rover_cmd_sub);
-  nh.subscribe(antenna_overide_heading_cmd_sub);
-  nh.subscribe(rover_gps_cmd_sub);
-
-  nh.negotiateTopics();
-  while (!nh.connected())
-  {
-    nh.negotiateTopics();
-  }
-
-  // Serial1.begin(GPSBaud);
-  // while (!Serial1)
-  //   ;
-
-  antenna_setup();
+  ros_setup();
+  // antenna_setup();
   // gps_setup();
 
   last_time = millis();
@@ -79,11 +64,28 @@ void loop()
   last_time = millis();
 
   // gps_loop();
-  antenna_heading_params[0] = base_gps_coords[0];
-  antenna_heading_params[1] = base_gps_coords[1];
+  // antenna_heading_params[0] = base_gps_coords[0];
+  // antenna_heading_params[1] = base_gps_coords[1];
 
-  antenna_loop();
+  // antenna_loop();
   ros_loop();
+}
+
+void ros_setup()
+{
+  nh.initNode();
+  nh.advertise(antennaGPSData_pub);
+  nh.advertise(antennaHeading_pub);
+
+  nh.subscribe(antenna_set_initial_rover_cmd_sub);
+  nh.subscribe(antenna_overide_heading_cmd_sub);
+  nh.subscribe(rover_gps_cmd_sub);
+
+  nh.negotiateTopics();
+  while (!nh.connected())
+  {
+    nh.negotiateTopics();
+  }
 }
 
 void ros_loop()

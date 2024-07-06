@@ -18,7 +18,6 @@ float antenna_heading_params[4] = {0, 0, 0, 0}; // latitude, longitude, initial 
 
 void antenna_setup()
 {
-  // Serial.begin(9600);
   servo.attach(9);
   delay(3000);
 
