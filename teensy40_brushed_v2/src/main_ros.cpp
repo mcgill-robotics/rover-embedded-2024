@@ -502,17 +502,6 @@ void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 
     // Motor 3 is controlled like a forklift, only up and down, range -1 to 1, because encoder is not working
     mot1.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
-    // mot2.set_target_angle_ps(arm_brushed_setpoint_ps[1]);
-    // mot3.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
-    // if (arm_brushed_setpoint_ps[1] > 0.0)
-    // {
-    //     mot2.set_direction(mot2._forward_dir);
-    // }
-    // else
-    // {
-    //     mot2.set_direction(!mot2._forward_dir);
-    // }
-    mot2.set_direction(mot2._forward_dir);
     mot2.move_manual(((float)arm_brushed_setpoint_ps[1]) / 100.0f);
     mot3.move_manual(((float)arm_brushed_setpoint_ps[0]) / 100.0f);
 
