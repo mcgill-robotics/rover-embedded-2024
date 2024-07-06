@@ -29,18 +29,20 @@ void gps_setup()
 void gps_loop()
 {
     // This displays information every time a new sentence is correctly encoded.
-
-    while (Serial1.available() > 0)
+    while (Serial1.available())
     {
+        ros_printf("Serial1.available.");
         if (gps.encode(Serial1.read()))
         {
-            displayInfo(); // For Debugging
+            // displayInfo(); // For Debugging
 
             //--------------------
             float lat = (float)gps.location.lat();
             float lng = (float)gps.location.lng();
             base_gps_coords[0] = lat;
             base_gps_coords[1] = lng;
+
+            ros_printf("Location: %.6f,%.6f", lat, lng);
         }
     }
 
@@ -49,8 +51,6 @@ void gps_loop()
         ros_printf("No GPS detected: check wiring.");
         base_gps_coords[0] = 0;
         base_gps_coords[1] = 0; // gps returning 0,0 should be seen as an error code
-        while (true)
-            ; // program gives up on you
     }
 }
 

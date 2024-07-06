@@ -14,13 +14,12 @@
 // ROS
 ros::NodeHandle nh;
 float antenna_gps_coords[2];
+
 std_msgs::Float32MultiArray antennaGPSDataMsg;
 ros::Publisher antennaGPSData_pub("/antennaGPSData", &antennaGPSDataMsg);
+
 std_msgs::Float32MultiArray antennaHeadingMsg;
 ros::Publisher antennaHeading_pub("/antennaHeading", &antennaHeadingMsg);
-
-void ros_setup();
-void ros_loop();
 
 void antenna_set_initial_rover_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> antenna_set_initial_rover_cmd_sub("/SetInitialRoverCoordsCmd", antenna_set_initial_rover_cmd_cb);
@@ -30,6 +29,9 @@ ros::Subscriber<std_msgs::Float32MultiArray> antenna_overide_heading_cmd_sub("/a
 
 void rover_gps_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> rover_gps_cmd_sub("/roverGPSData", rover_gps_cmd_cb); // used to be /roverGPSFeedCmd
+
+void ros_setup();
+void ros_loop();
 
 // DECLARATIONS
 extern void antenna_setup();
@@ -52,7 +54,7 @@ void setup()
 {
   ros_setup();
   antenna_setup();
-  // gps_setup();
+  gps_setup();
 
   last_time = millis();
 }
@@ -63,11 +65,11 @@ void loop()
     ;
   last_time = millis();
 
-  // gps_loop();
-  // antenna_heading_params[0] = base_gps_coords[0];
-  // antenna_heading_params[1] = base_gps_coords[1];
-
   antenna_loop();
+  gps_loop();
+  antenna_heading_params[0] = base_gps_coords[0];
+  antenna_heading_params[1] = base_gps_coords[1];
+
   ros_loop();
 }
 

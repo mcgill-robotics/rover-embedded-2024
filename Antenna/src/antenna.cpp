@@ -37,7 +37,7 @@ void antenna_loop()
 
   if (isOveriden)
   {
-    ros_printf("Overiden");
+    // ros_printf("Overiden");
     servo.write(servo_angle[0]);
     return;
   }
