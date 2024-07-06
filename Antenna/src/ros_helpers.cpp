@@ -1,10 +1,11 @@
 
 #include <ros.h>
 #include <std_msgs/String.h>
+#include "ros_helpers.h"
 
 extern ros::NodeHandle nh;
 
-static std_msgs::String debug_msg;
+std_msgs::String debug_msg;
 ros::Publisher debug_pub("debug_topic", &debug_msg);
 char message_buffer[256];
 

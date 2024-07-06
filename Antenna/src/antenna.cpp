@@ -4,6 +4,8 @@
 #include <math.h>
 #include <iostream>
 
+#include "ros_helpers.h"
+
 #define ANTENNA_PWM_PIN 9
 
 float servo_angle[1];
@@ -35,6 +37,7 @@ void antenna_loop()
 
   if (isOveriden)
   {
+    ros_printf("Overiden");
     servo.write(servo_angle[0]);
     return;
   }
