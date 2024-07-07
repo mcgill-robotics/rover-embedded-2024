@@ -71,7 +71,7 @@ void loop()
   while(millis() - last_time < CONTROL_LOOP_PERIOD_MS);
   last_time = millis();
   
-  //gps_loop();
+  gps_loop();
   pantilt_loop();
   ros_loop();
 }
