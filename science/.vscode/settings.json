@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.yml": "yaml",
+        "*.rviz": "yaml",
+        "array": "cpp",
+        "iostream": "cpp"
+    }
+}

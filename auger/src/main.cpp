@@ -1,5 +1,6 @@
 #include "common.h"
 
+#if USE_ROS_FIRMWARE == 0
 #include <Arduino.h>
 #include <ros.h>
 #include "std_msgs/Float64MultiArray.h"
@@ -69,28 +70,6 @@ volatile bool bottom_limit_switch_pressed = false; // true if at very bottom
 void ISR_top();
 void ISR_bottom();
 
-static void ros_printf(const char *format, ...)
-{
-  // Initialize the variable argument list
-  va_list args;
-  va_start(args, format);
-
-  // Format the message and store it in message_buffer
-  vsnprintf(message_buffer, sizeof(message_buffer), format, args);
-
-  // End the variable argument list
-  va_end(args);
-
-  // Assign the formatted message to debug_msg.data
-  debug_msg.data = message_buffer;
-
-  // Publish the debug message
-  debug_pub.publish(&debug_msg);
-
-  // Spin once to handle callbacks
-  nh.spinOnce();
-}
-
 // subscriber should receive 2 integer array. 0: stop, 1: CW, -1: CCW
 // first element for screw(up/down), second for auger(soil drill)
 void aug_cb(const std_msgs::Float64MultiArray &input_msg)
@@ -151,12 +130,12 @@ void stepper_cb(const std_msgs::Float64MultiArray &input_msg)
 // move screw UP until stopped or top limit switch is hit
 void screw_up()
 {
-  ros_printf("screw_up()");
+  Serial.printf("screw_up()");
   // Safety check
   top_limit_switch_pressed = digitalRead(top_limit_switch_pin) == LOW;
   if (top_limit_switch_pressed)
   {
-    ros_printf("Top limit switch pressed. Stopping screw.");
+    Serial.printf("Top limit switch pressed. Stopping screw.");
     screw_stop();
     return;
   }
@@ -167,12 +146,12 @@ void screw_up()
 // move screw DOWN until stopped or bottom switch is hit
 void screw_down()
 {
-  ros_printf("screw_down()");
+  Serial.printf("screw_down()");
   // Safety check
   bottom_limit_switch_pressed = digitalRead(bottom_limit_switch_pin) == LOW;
   if (bottom_limit_switch_pressed)
   {
-    ros_printf("Bottom limit switch pressed. Stopping screw.");
+    Serial.printf("Bottom limit switch pressed. Stopping screw.");
     screw_stop();
     return;
   }
@@ -183,28 +162,28 @@ void screw_down()
 // stops the screw
 void screw_stop()
 {
-  ros_printf("screw_stop()");
+  Serial.printf("screw_stop()");
   analogWrite(pwm0, 0);
 }
 
 //-------------------  auger functions  ---------------------
 void auger_down()
 {
-  ros_printf("auger_down()");
+  Serial.printf("auger_down()");
   digitalWrite(dir1, LOW);
   analogWrite(pwm1, 100);
 }
 
 void auger_up()
 {
-  ros_printf("auger_up()");
+  Serial.printf("auger_up()");
   digitalWrite(dir1, HIGH);
   analogWrite(pwm1, 100);
 }
 
 void auger_stop()
 {
-  ros_printf("auger_stop()");
+  Serial.printf("auger_stop()");
   digitalWrite(dir1, LOW);
   analogWrite(pwm1, 0);
 }
@@ -219,7 +198,7 @@ void ISR_bottom()
     if (digitalRead(bottom_limit_switch_pin) == LOW)
     {
       bottom_limit_switch_pressed = true;
-      ros_printf("Bottom limit switch pressed. Stopping screw.");
+      Serial.printf("Bottom limit switch pressed. Stopping screw.");
       screw_stop();
     }
     else
@@ -238,7 +217,7 @@ void ISR_top()
     if (digitalRead(top_limit_switch_pin) == LOW)
     {
       top_limit_switch_pressed = true;
-      ros_printf("Top limit switch pressed. Stopping screw.");
+      Serial.printf("Top limit switch pressed. Stopping screw.");
       screw_stop();
     }
     else
@@ -310,41 +289,39 @@ void process_serial_aug_command()
   }
 }
 
-void receiveFloatArray(float *data, size_t length)
+void receiveFloatArray(float *data, size_t count)
 {
-  ros_printf("%s", __func__);
-  byte *byteData = (byte *)data;
-  size_t dataSize = length * sizeof(float);
-  radio.read(byteData, dataSize);
+  Serial.printf("%s()\n", __func__);
+  size_t length = count * sizeof(float);
+  radio.read(data, length);
+  for (uint32_t i = 0; i < length; i++)
+  {
+    // Print byte in XX:XX format
+    Serial.printf("%02X", ((uint8_t *)data)[i] & 0xFF);
+    Serial.print(":");
+  }
 }
 
 void radio_loop()
 {
-  ros_printf("%s", __func__);
   bool rx_flag = radio.available();
-  radio.startListening();
+  // radio.startListening();
 
   if (rx_flag)
   {
+    Serial.printf("%s() rx_flag\r\n", __func__);
     float transmitter_data[8];
     receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
-    science_data_msg.data[4] = transmitter_data[0];
-    science_data_msg.data[5] = transmitter_data[1];
-    science_data_msg.data[6] = transmitter_data[2];
-    science_data_msg.data[7] = transmitter_data[3];
-    science_data_msg.data[8] = transmitter_data[4];
-    science_data_msg.data[9] = transmitter_data[5];
-    science_data_msg.data[10] = transmitter_data[6];
-    science_data_msg.data[11] = transmitter_data[7];
-    science_pub.publish(&science_data_msg);
-    nh.spinOnce();
-    delay(100);
+    Serial.printf("pH data: %f, %f, %f, %f\r\n", transmitter_data[0], transmitter_data[1], transmitter_data[2], transmitter_data[3]);
+    Serial.printf("moisture data: %f, %f, %f, %f\r\n", transmitter_data[4], transmitter_data[5], transmitter_data[6], transmitter_data[7]);
   }
 };
 
 //-------------------  Application  ---------------------
 void setup()
 {
+  SerialUSB.begin(115200);
+
   // DC motor
   pinMode(pwm0, OUTPUT);
   pinMode(dir0, OUTPUT);
@@ -360,7 +337,6 @@ void setup()
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_HIGH);
   radio.startListening();
-  lastTime = millis();
 
   // limit switch
   pinMode(bottom_limit_switch_pin, INPUT_PULLUP);
@@ -369,32 +345,24 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(bottom_limit_switch_pin), ISR_bottom, CHANGE);
   attachInterrupt(digitalPinToInterrupt(top_limit_switch_pin), ISR_top, CHANGE);
 
-// ROS
-#if USE_ROS_FIRMWARE == 0
-  SerialUSB.begin(115200);
-#elif USE_ROS_FIRMWARE == 1
-  nh.initNode();
-
-  nh.subscribe(aug_sub);
-  nh.subscribe(stepper_sub);
-  nh.advertise(debug_pub);
-  nh.advertise(science_pub);
-
-  nh.negotiateTopics();
-  while (!nh.connected())
-  {
-    nh.negotiateTopics();
-  }
-#endif
+  lastTime = millis();
 }
 
 void loop()
 {
-  delay(10);
-#if USE_ROS_FIRMWARE == 0
+  delay(1);
+  if (millis() - lastTime > 1000)
+  {
+    Serial.printf("1 second has passed\r\n");
+    lastTime = millis();
+  }
   process_serial_aug_command();
-#elif USE_ROS_FIRMWARE == 1
-  nh.spinOnce();
   radio_loop();
-#endif
+  // if (radio.available())
+  // {
+  //   char text[32] = "";
+  //   radio.read(&text, sizeof(text));
+  //   Serial.println(text);
+  // }
 }
+#endif

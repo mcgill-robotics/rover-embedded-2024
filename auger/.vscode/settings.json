@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.yml": "yaml",
+        "*.rviz": "yaml",
+        "string_view": "cpp"
+    }
+}
