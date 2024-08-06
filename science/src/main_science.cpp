@@ -134,8 +134,8 @@ void update_moisture_data()
 
 void send_payload_rf24(uint8_t *data, size_t length)
 {
-    radio.write(data, length);
-    Serial.printf("Sending %d bytes: ", length);
+    bool result = radio.write(data, length);
+    Serial.printf("RESULT=%d, Sending %d bytes: ", result, length);
     for (uint32_t i = 0; i < length; i++)
     {
         // Print byte in XX:XX format
@@ -178,7 +178,7 @@ void loop()
 
     update_moisture_data();
     update_pH_data();
-    if (millis() - lastTime > 500)
+    if (millis() - lastTime > 100)
     {
         lastTime = millis();
         send_payload_rf24((uint8_t *)transmitter_data, sizeof(transmitter_data));

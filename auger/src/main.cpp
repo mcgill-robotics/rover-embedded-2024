@@ -289,7 +289,7 @@ void process_serial_aug_command()
   }
 }
 
-void receiveFloatArray(float *data, size_t count)
+void receive_float_array(float *data, size_t count)
 {
   Serial.printf("%s()\n", __func__);
   size_t length = count * sizeof(float);
@@ -311,7 +311,7 @@ void radio_loop()
   {
     Serial.printf("%s() rx_flag\r\n", __func__);
     float transmitter_data[8];
-    receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
+    receive_float_array(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
     Serial.printf("pH data: %f, %f, %f, %f\r\n", transmitter_data[0], transmitter_data[1], transmitter_data[2], transmitter_data[3]);
     Serial.printf("moisture data: %f, %f, %f, %f\r\n", transmitter_data[4], transmitter_data[5], transmitter_data[6], transmitter_data[7]);
   }
@@ -332,7 +332,7 @@ void setup()
   pinMode(STEPPER_DIR_PIN, OUTPUT);
   pinMode(STEPPER_STEP_PIN, OUTPUT);
 
-  // nrf
+  // NRF24L01
   radio.begin();
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_HIGH);
@@ -350,13 +350,13 @@ void setup()
 
 void loop()
 {
-  delay(1);
-  if (millis() - lastTime > 1000)
-  {
-    Serial.printf("1 second has passed\r\n");
-    lastTime = millis();
-  }
-  process_serial_aug_command();
+  // delay(1);
+  // if (millis() - lastTime > 1000)
+  // {
+  //   Serial.printf("AUGER 1 second has passed\r\n");
+  //   lastTime = millis();
+  // }
+  // process_serial_aug_command();
   radio_loop();
   // if (radio.available())
   // {

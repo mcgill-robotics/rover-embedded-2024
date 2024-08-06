@@ -311,24 +311,24 @@ void process_serial_aug_command()
   }
 }
 
-void receiveFloatArray(float *data, size_t length)
+void receive_float_array(float *data, size_t count)
 {
   ros_printf("%s", __func__);
-  byte *byteData = (byte *)data;
-  size_t dataSize = length * sizeof(float);
-  radio.read(byteData, dataSize);
+  size_t length = count * sizeof(float);
+  radio.read(data, length);
 }
 
 void radio_loop()
 {
+  static float transmitter_data[8] = {0};
+
   ros_printf("%s", __func__);
   bool rx_flag = radio.available();
-  radio.startListening();
+  // radio.startListening();
 
   if (rx_flag)
   {
-    float transmitter_data[8];
-    receiveFloatArray(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
+    receive_float_array(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
     science_data_msg.data[4] = transmitter_data[0];
     science_data_msg.data[5] = transmitter_data[1];
     science_data_msg.data[6] = transmitter_data[2];
@@ -355,12 +355,11 @@ void setup()
   pinMode(STEPPER_DIR_PIN, OUTPUT);
   pinMode(STEPPER_STEP_PIN, OUTPUT);
 
-  // nrf
+  // NRF24L01
   radio.begin();
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_HIGH);
   radio.startListening();
-  lastTime = millis();
 
   // limit switch
   pinMode(bottom_limit_switch_pin, INPUT_PULLUP);
@@ -381,11 +380,13 @@ void setup()
   {
     nh.negotiateTopics();
   }
+
+  lastTime = millis();
 }
 
 void loop()
 {
-  delay(10);
+  // delay(10);
   nh.spinOnce();
   radio_loop();
 }
