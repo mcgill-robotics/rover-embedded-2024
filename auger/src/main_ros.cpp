@@ -329,14 +329,8 @@ void radio_loop()
   if (rx_flag)
   {
     receive_float_array(transmitter_data, sizeof(transmitter_data) / sizeof(transmitter_data[0]));
-    science_data_msg.data[4] = transmitter_data[0];
-    science_data_msg.data[5] = transmitter_data[1];
-    science_data_msg.data[6] = transmitter_data[2];
-    science_data_msg.data[7] = transmitter_data[3];
-    science_data_msg.data[8] = transmitter_data[4];
-    science_data_msg.data[9] = transmitter_data[5];
-    science_data_msg.data[10] = transmitter_data[6];
-    science_data_msg.data[11] = transmitter_data[7];
+    science_data_msg.data_length = sizeof(transmitter_data) / sizeof(transmitter_data[0]);
+    science_data_msg.data = transmitter_data;
     science_pub.publish(&science_data_msg);
     nh.spinOnce();
   }
@@ -358,7 +352,7 @@ void setup()
   // NRF24L01
   radio.begin();
   radio.openReadingPipe(0, address);
-  radio.setPALevel(RF24_PA_HIGH);
+  radio.setPALevel(RF24_PA_LOW);
   radio.startListening();
 
   // limit switch
@@ -386,7 +380,7 @@ void setup()
 
 void loop()
 {
-  // delay(10);
+  delay(1);
   nh.spinOnce();
   radio_loop();
 }

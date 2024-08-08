@@ -154,7 +154,7 @@ void setup()
     // NRF24
     radio.begin();
     radio.openWritingPipe(address);
-    radio.setPALevel(RF24_PA_HIGH);
+    radio.setPALevel(RF24_PA_LOW);
     radio.stopListening();
 
     // moisture
@@ -178,7 +178,7 @@ void loop()
 
     update_moisture_data();
     update_pH_data();
-    if (millis() - lastTime > 100)
+    if (millis() - lastTime > 200)
     {
         lastTime = millis();
         send_payload_rf24((uint8_t *)transmitter_data, sizeof(transmitter_data));
