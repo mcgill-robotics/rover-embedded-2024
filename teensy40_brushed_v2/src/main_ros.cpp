@@ -184,7 +184,7 @@ void setup()
     // Motor init, forward logic is 1
     mot1.initialize_motor(1, PWMPIN1, DIRPIN1, nSLEEP1, 5.0, 0.0);
     mot2.initialize_motor(1, PWMPIN2, DIRPIN2, nSLEEP2, 5.0, 0.0);
-    mot3.initialize_motor(1, PWMPIN3, DIRPIN3, nSLEEP3, 5.0, 0.0);
+    mot3.initialize_motor(-1, PWMPIN3, DIRPIN3, nSLEEP3, 5.0, 0.0);
 
     // Set motor configuration after initialization
     // Gear ratio needs to be set before angle limits so limits are scaled
@@ -502,8 +502,8 @@ void arm_brushed_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 
     // Motor 3 is controlled like a forklift, only up and down, range -1 to 1, because encoder is not working
     mot1.set_target_angle_ps(arm_brushed_setpoint_ps[2]);
-    mot2.move_manual(((float)arm_brushed_setpoint_ps[1]) / 100.0f);
-    mot3.move_manual(((float)arm_brushed_setpoint_ps[0]) / 100.0f);
+    mot2.move_manual(((float)arm_brushed_setpoint_ps[0]) / 100.0f);
+    mot3.move_manual(((float)arm_brushed_setpoint_ps[1]) / 100.0f);
 
     HWSERIAL.printf("EE: %8.4f, WR: %8.4f, WP: %8.4f, \n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
     ros_printf("EE: %8.4f, WR: %8.4f, WP: %8.4f, \n", arm_brushed_setpoint_ps[0], arm_brushed_setpoint_ps[1], arm_brushed_setpoint_ps[2]);
