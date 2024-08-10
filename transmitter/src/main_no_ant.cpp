@@ -5,19 +5,25 @@
 #include <array>
 #include <string>
 
-#define DATA_FREQUENCY 10
+#define DATA_FREQUENCY 10 // MINIMUM IS 1
+#define DATA_FREQUENCY_MS 1000 / DATA_FREQUENCY
+#define PH_MOISTURE_SAMPLES_PER_SECOND 100
+#define PH_MOISTURE_SAMPLES_MS 1000 / PH_MOISTURE_SAMPLES_PER_SECOND
 
 // moisture sensor
-#define moisture0 A7
-#define moisture1 A6
-#define moisture2 A5
-#define moisture3 A4
+#define MOISTURE1 21
+#define MOISTURE2 19
+#define MOISTURE3 17
+#define MOISTURE4 15
 
 // pH sensor
-#define ph0 A3
-#define ph1 A2
-#define ph2 A1
-#define ph3 A0
+#define PH1 20
+#define PH2 18
+#define PH3 16
+#define PH4 14
+
+// geiger
+#define GEIGER_INT_PIN 10
 
 volatile uint32_t geiger_count = 0;
 uint32_t last_geiger_count = 0;
@@ -26,92 +32,152 @@ uint32_t geiger_buffer[DATA_FREQUENCY] = {0};
 uint32_t geiger_index = 0;
 float geiger_per_second = 0.0;
 
-void update_pH_data()
+volatile uint16_t ph1_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t ph1_buffer_index = 0;
+float ph1 = 7.0;
+
+volatile uint16_t ph2_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t ph2_buffer_index = 0;
+float ph2 = 7.0;
+
+volatile uint16_t ph3_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t ph3_buffer_index = 0;
+float ph3 = 7.0;
+
+volatile uint16_t ph4_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t ph4_buffer_index = 0;
+float ph4 = 7.0;
+
+volatile uint16_t moisture1_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t moisture1_buffer_index = 0;
+float moisture1 = 0.0;
+
+volatile uint16_t moisture2_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t moisture2_buffer_index = 0;
+float moisture2 = 0.0;
+
+volatile uint16_t moisture3_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t moisture3_buffer_index = 0;
+float moisture3 = 0.0;
+
+volatile uint16_t moisture4_buffer[PH_MOISTURE_SAMPLES_PER_SECOND];
+volatile uint16_t moisture4_buffer_index = 0;
+float moisture4 = 0.0;
+
+IntervalTimer phMoistureTimer;
+
+float message_data[9];
+char message_bytes[38];
+
+void extGeiger_INT();
+void extPhMoisture_INT();
+void update_pH_moisture();
+void update_geiger();
+
+void setup()
 {
-    for (int i = 0; i < 10; i++)
-    { // Get 10 sample value from the sensor for smooth the value
-        buf0[i] = analogRead(ph0);
-        buf1[i] = analogRead(ph1);
-        buf2[i] = analogRead(ph2);
-        buf3[i] = analogRead(ph3);
-        delay(10);
+
+    pinMode(PH1, INPUT);
+    pinMode(PH2, INPUT);
+    pinMode(PH3, INPUT);
+    pinMode(PH4, INPUT);
+
+    pinMode(MOISTURE1, INPUT);
+    pinMode(MOISTURE2, INPUT);
+    pinMode(MOISTURE3, INPUT);
+    pinMode(MOISTURE4, INPUT);
+
+    pinMode(GEIGER_INT_PIN, INPUT);
+
+    analogReadResolution(12);
+
+    phMoistureTimer.begin(extPhMoisture_INT, PH_MOISTURE_SAMPLES_MS * 1000);
+    attachInterrupt(GEIGER_INT_PIN, extGeiger_INT, RISING);
+    message_bytes[0] = '$';
+    message_bytes[1] = '$';
+}
+
+void loop()
+{
+    update_pH_moisture();
+    update_geiger();
+
+    message_data[0] = ph1;
+    message_data[1] = ph2;
+    message_data[2] = ph3;
+    message_data[3] = ph4;
+
+    message_data[4] = moisture1;
+    message_data[5] = moisture2;
+    message_data[6] = moisture3;
+    message_data[7] = moisture4;
+
+    message_data[8] = geiger_per_second;
+
+    // memcpy(message_bytes + 2, message_data, 4 * 9);
+
+    // SerialUSB.write(message_bytes, 38);
+
+    for (int i = 0; i < 8; i++)
+    {
+        Serial.print(message_data[i]);
+        Serial.print(',');
+    }
+    Serial.println(message_data[8]);
+
+    delay(DATA_FREQUENCY_MS);
+}
+
+void update_pH_moisture()
+{
+
+    // PH
+    uint32_t totalSamples1 = 0;
+    uint32_t totalSamples2 = 0;
+    uint32_t totalSamples3 = 0;
+    uint32_t totalSamples4 = 0;
+    for (int i = 0; i < PH_MOISTURE_SAMPLES_PER_SECOND; i++)
+    {
+        totalSamples1 += ph1_buffer[i];
+        totalSamples2 += ph2_buffer[i];
+        totalSamples3 += ph3_buffer[i];
+        totalSamples4 += ph4_buffer[i];
     }
 
-    for (int i = 0; i < 9; i++)
-    { // sort the analog from small to large
-        for (int j = i + 1; j < 10; j++)
-        {
-            if (buf0[i] > buf0[j])
-            {
-                temp0 = buf0[i];
-                buf0[i] = buf0[j];
-                buf0[j] = temp0;
-            }
+    ph1 = (((float)totalSamples1 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 3.3; // voltages
+    ph2 = (((float)totalSamples2 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 3.3; // voltages
+    ph3 = (((float)totalSamples3 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 3.3; // voltages
+    ph4 = (((float)totalSamples4 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 3.3; // voltages
 
-            if (buf1[i] > buf1[j])
-            {
-                temp1 = buf1[i];
-                buf1[i] = buf1[j];
-                buf1[j] = temp1;
-            }
+    ph1 = (-5.6548 * ph1) + 15.509; // PH
+    ph2 = (-5.6548 * ph2) + 15.509;
+    ph3 = (-5.6548 * ph3) + 15.509;
+    ph4 = (-5.6548 * ph4) + 15.509;
 
-            if (buf2[i] > buf2[j])
-            {
-                temp2 = buf2[i];
-                buf2[i] = buf2[j];
-                buf2[j] = temp2;
-            }
-
-            if (buf3[i] > buf3[j])
-            {
-                temp3 = buf3[i];
-                buf3[i] = buf3[j];
-                buf3[j] = temp3;
-            }
-        }
+    // MOISTURE
+    totalSamples1 = 0;
+    totalSamples2 = 0;
+    totalSamples3 = 0;
+    totalSamples4 = 0;
+    for (int i = 0; i < PH_MOISTURE_SAMPLES_PER_SECOND; i++)
+    {
+        totalSamples1 += moisture1_buffer[i];
+        totalSamples2 += moisture2_buffer[i];
+        totalSamples3 += moisture3_buffer[i];
+        totalSamples4 += moisture4_buffer[i];
     }
 
-    avgValue0 = 0;
-    avgValue1 = 0;
-    avgValue2 = 0;
-    avgValue3 = 0;
-
-    for (int i = 2; i < 8; i++)
-    { // take the average value of 6 center sample
-        avgValue0 += buf0[i];
-        avgValue1 += buf1[i];
-        avgValue2 += buf2[i];
-        avgValue3 += buf3[i];
-    }
-
-    avgValue0 = avgValue0 / 6;
-    avgValue1 = avgValue1 / 6;
-    avgValue2 = avgValue2 / 6;
-    avgValue3 = avgValue3 / 6;
-
-    float milVolt0 = (float)avgValue0 * (5.0 / 1023.0);    // convert the analog reading into millivolt
-    float phValue0 = -3.71654359 * milVolt0 + 14.59650933; // convert the millivolt into pH value
-
-    float milVolt1 = (float)avgValue1 * (5.0 / 1023.0);
-    float phValue1 = -3.71654359 * milVolt1 + 14.59650933;
-
-    float milVolt2 = (float)avgValue2 * (5.0 / 1023.0);
-    float phValue2 = -3.71654359 * milVolt2 + 14.59650933;
-
-    float milVolt3 = (float)avgValue3 * (5.0 / 1023.0);
-    float phValue3 = -3.71654359 * milVolt3 + 14.59650933;
-
-    transmitter_data[4] = phValue0;
-    transmitter_data[5] = phValue1;
-    transmitter_data[6] = phValue2;
-    transmitter_data[7] = phValue3;
+    moisture1 = ((((float)totalSamples1 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 100.0); // moisture percentages
+    moisture2 = ((((float)totalSamples2 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 100.0);
+    moisture3 = ((((float)totalSamples3 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 100.0);
+    moisture4 = ((((float)totalSamples4 / PH_MOISTURE_SAMPLES_PER_SECOND) / 4095.0) * 100.0);
 }
 
 void update_geiger()
 {
     uint32_t geiger_clicks = geiger_count - last_geiger_count;
     geiger_buffer[geiger_index++] = geiger_clicks;
-    geiger_index = geiger_index % DATA_FREQUENCY;
+    geiger_index %= DATA_FREQUENCY;
     geiger_per_second = 0;
     for (int i = 0; i < DATA_FREQUENCY; i++)
     {
@@ -124,4 +190,27 @@ void update_geiger()
 void extGeiger_INT()
 {
     geiger_count += 1;
+}
+
+void extPhMoisture_INT()
+{
+    ph1_buffer[ph1_buffer_index++] = analogRead(PH1);
+    ph2_buffer[ph2_buffer_index++] = analogRead(PH2);
+    ph3_buffer[ph3_buffer_index++] = analogRead(PH3);
+    ph4_buffer[ph4_buffer_index++] = analogRead(PH4);
+
+    moisture1_buffer[moisture1_buffer_index++] = analogRead(MOISTURE1);
+    moisture2_buffer[moisture2_buffer_index++] = analogRead(MOISTURE2);
+    moisture3_buffer[moisture3_buffer_index++] = analogRead(MOISTURE3);
+    moisture4_buffer[moisture4_buffer_index++] = analogRead(MOISTURE4);
+
+    ph1_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+    ph2_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+    ph3_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+    ph4_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+
+    moisture1_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+    moisture2_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+    moisture3_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
+    moisture4_buffer_index %= PH_MOISTURE_SAMPLES_PER_SECOND;
 }

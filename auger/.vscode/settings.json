@@ -4,5 +4,7 @@
         "*.rviz": "yaml",
         "string_view": "cpp",
         "*.tcc": "cpp"
-    }
+    },
+    "stm32-for-vscode.openOCDPath": false,
+    "stm32-for-vscode.makePath": false
 }

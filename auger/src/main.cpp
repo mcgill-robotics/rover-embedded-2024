@@ -36,10 +36,16 @@ void auger_stop();
 //-------------------  CONFIG   ---------------------
 // steps/revolutions: run stepsPerRev for loop for # of steps to take
 // number of steps per 1 rev
-const int stepsPerRevolution = 200;
-const int STEPPER_STEP_PIN = 1;
-const int STEPPER_DIR_PIN = 0;
-const int STEPPER_DELAY = 7000;
+const int stepsPerRevolution = 800; // 1/4 step
+volatile float degreesPerStep = 360.0 / stepsPerRevolution;
+volatile float degreesToTurn = 0.0;
+volatile int currentStepperStepPinState = 0;
+volatile int STEPPER_STEP_PIN = 1;
+volatile int STEPPER_DIR_PIN = 0;
+volatile int STEPPER_DELAY = 7000;
+const int STEPPER_M0_PIN = 6;
+const int STEPPER_M1_PIN = 7;
+const int STEPPER_M2_PIN = 8;
 
 // screw
 const int pwm0 = 2;
@@ -67,8 +73,11 @@ float stepper_current_angle = 0.0;
 volatile bool top_limit_switch_pressed = false;    // true if at very top
 volatile bool bottom_limit_switch_pressed = false; // true if at very bottom
 
+IntervalTimer stepperTimer;
+
 void ISR_top();
 void ISR_bottom();
+void ISR_stepper();
 
 // subscriber should receive 2 integer array. 0: stop, 1: CW, -1: CCW
 // first element for screw(up/down), second for auger(soil drill)
@@ -106,6 +115,7 @@ void aug_cb(const std_msgs::Float64MultiArray &input_msg)
 // Every publish to /science will rotate the stepper motor 0.25 revolutions
 void stepper_cb(const std_msgs::Float64MultiArray &input_msg)
 {
+
   // Calculate the total number of steps required for 0.25 revolutions
   int totalSteps = static_cast<int>(0.25 * stepsPerRevolution);
 
@@ -140,7 +150,7 @@ void screw_up()
     return;
   }
   digitalWrite(dir0, HIGH);
-  analogWrite(pwm0, 40);
+  analogWrite(pwm0, 150);
 }
 
 // move screw DOWN until stopped or bottom switch is hit
@@ -156,7 +166,7 @@ void screw_down()
     return;
   }
   digitalWrite(dir0, LOW);
-  analogWrite(pwm0, 40);
+  analogWrite(pwm0, 150);
 }
 
 // stops the screw
@@ -320,7 +330,9 @@ void radio_loop()
 //-------------------  Application  ---------------------
 void setup()
 {
-  SerialUSB.begin(115200);
+  while (!SerialUSB)
+    ;
+  SerialUSB.println("SETUP");
 
   // DC motor
   pinMode(pwm0, OUTPUT);
@@ -328,15 +340,22 @@ void setup()
   pinMode(pwm1, OUTPUT);
   pinMode(dir1, OUTPUT);
 
+  pinMode(STEPPER_M0_PIN, OUTPUT);
+  pinMode(STEPPER_M1_PIN, OUTPUT);
+  pinMode(STEPPER_M2_PIN, OUTPUT);
+  digitalWrite(STEPPER_M0_PIN, LOW); // 1/4 step 0 1 0
+  digitalWrite(STEPPER_M1_PIN, HIGH);
+  digitalWrite(STEPPER_M2_PIN, LOW);
+
   // stepper
   pinMode(STEPPER_DIR_PIN, OUTPUT);
   pinMode(STEPPER_STEP_PIN, OUTPUT);
 
   // NRF24L01
-  radio.begin();
-  radio.openReadingPipe(0, address);
-  radio.setPALevel(RF24_PA_HIGH);
-  radio.startListening();
+  // radio.begin();
+  // radio.openReadingPipe(0, address);
+  // radio.setPALevel(RF24_PA_HIGH);
+  // radio.startListening();
 
   // limit switch
   pinMode(bottom_limit_switch_pin, INPUT_PULLUP);
@@ -344,9 +363,12 @@ void setup()
   // Attach interrupts for both limit switches
   attachInterrupt(digitalPinToInterrupt(bottom_limit_switch_pin), ISR_bottom, CHANGE);
   attachInterrupt(digitalPinToInterrupt(top_limit_switch_pin), ISR_top, CHANGE);
+  stepperTimer.begin(ISR_stepper, STEPPER_DELAY);
 
   lastTime = millis();
 }
+
+int stepper_dir = 0;
 
 void loop()
 {
@@ -357,12 +379,45 @@ void loop()
   //   lastTime = millis();
   // }
   // process_serial_aug_command();
-  radio_loop();
+  // radio_loop();
   // if (radio.available())
   // {
   //   char text[32] = "";
   //   radio.read(&text, sizeof(text));
   //   Serial.println(text);
   // }
+
+  digitalWrite(STEPPER_DIR_PIN, stepper_dir);
+  stepper_dir = !stepper_dir;
+
+  for (int i = 0; i < 360; i++) // step through each degree
+  {
+    digitalWrite(STEPPER_STEP_PIN, HIGH);
+    delayMicroseconds(STEPPER_DELAY);
+    digitalWrite(STEPPER_STEP_PIN, LOW);
+    delayMicroseconds(STEPPER_DELAY);
+
+    digitalWrite(STEPPER_STEP_PIN, HIGH);
+    delayMicroseconds(STEPPER_DELAY);
+    digitalWrite(STEPPER_STEP_PIN, LOW);
+    delayMicroseconds(STEPPER_DELAY);
+  }
+}
+
+void ISR_stepper()
+{
+
+  if (currentStepperStepPinState)
+  {
+    digitalWrite(STEPPER_STEP_PIN, LOW);
+    currentStepperStepPinState = 0;
+    return;
+  }
+
+  if (abs(degreesToTurn) >= degreesPerStep)
+  {
+    (degreesToTurn < 0) ? digitalWrite(STEPPER_DIR_PIN, LOW) : digitalWrite(STEPPER_DIR_PIN, HIGH); // change dir pin
+    digitalWrite(STEPPER_STEP_PIN, HIGH);
+  }
 }
 #endif
