@@ -37,12 +37,12 @@ void pantilt_setup()
 
 void turnRight()
 {
-  myservo.writeMicroseconds(1300);
+  myservo.writeMicroseconds(1400);
 }
 
 void turnLeft()
 {
-  myservo.writeMicroseconds(1700);
+  myservo.writeMicroseconds(1600);
 }
 
 void turnStop()
@@ -60,7 +60,7 @@ void pantilt_loop()
   else if (turnState == 1)
   {
     turnLeft();
-    Serial.println(pos);
+    // Serial.println(pos);
   }
   else if (turnState == -1)
   {

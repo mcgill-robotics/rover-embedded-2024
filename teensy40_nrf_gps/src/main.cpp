@@ -3,7 +3,7 @@
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
 
-#include <ros.h> 
+#include <ros.h>
 #include "std_msgs/Float32.h"
 #include "std_msgs/Int16.h"
 #include "std_msgs/Float32MultiArray.h"
@@ -17,7 +17,7 @@ Functionality: Returns current Rover coordinates (every loop) over ROSSerial. Ta
 Note: A GPS value of [0,0] should be treated as an error code
 */
 
-#define CONTROL_LOOP_PERIOD_MS 10
+#define CONTROL_LOOP_PERIOD_MS 5
 
 // ROS
 ros::NodeHandle nh;
@@ -27,8 +27,8 @@ std_msgs::Float32MultiArray roverGPSDataMsg;
 ros::Publisher roverGPSData_pub("/roverGPSData", &roverGPSDataMsg);
 
 extern int turnState;
-void pantilt_cmd_cb(const std_msgs::Float32 &input_msg);
-ros::Subscriber<std_msgs::Float32> pantilt_cmd_sub("/pantiltCmd", pantilt_cmd_cb);
+void pantilt_cmd_cb(const std_msgs::Float32MultiArray &input_msg);
+ros::Subscriber<std_msgs::Float32MultiArray> pantilt_cmd_sub("/pantiltCmd", pantilt_cmd_cb);
 
 // DECLARATIONS
 static const uint32_t GPSBaud = 9600;
@@ -45,14 +45,14 @@ void setup()
   // ROS Setup
   nh.initNode();
   nh.advertise(roverGPSData_pub);
-  // nh.subscribe(pantilt_cmd_sub);
+  nh.subscribe(pantilt_cmd_sub);
   nh.negotiateTopics();
-  
+
   while (!nh.connected())
   {
     nh.negotiateTopics();
   }
-  
+
   // Wait for Serial
   // Serial.begin(115200);
   Serial1.begin(GPSBaud);
@@ -61,15 +61,16 @@ void setup()
   roverGPSDataMsg.data = rover_gps_coords;
 
   pantilt_setup();
-  //gps_setup(); -- Currently empty  
+  // gps_setup(); -- Currently empty
   last_time_main = millis();
 }
 
 void loop()
 {
-  while(millis() - last_time_main < CONTROL_LOOP_PERIOD_MS);
+  while (millis() - last_time_main < CONTROL_LOOP_PERIOD_MS)
+    ;
   last_time_main = millis();
-  
+
   gps_loop();
   pantilt_loop();
   ros_loop();
@@ -77,18 +78,17 @@ void loop()
 
 void ros_loop()
 {
-    // Publish Rover GPS Coords
-    roverGPSData_pub.publish(&roverGPSDataMsg);
-    nh.spinOnce();
+  // Publish Rover GPS Coords
+  roverGPSData_pub.publish(&roverGPSDataMsg);
+  nh.spinOnce();
 
-    // delay(1); // Delay may require change
+  // delay(1); // Delay may require change
 }
 
-
-void pantilt_cmd_cb(const std_msgs::Float32 &input_msg)
+void pantilt_cmd_cb(const std_msgs::Float32MultiArray &input_msg)
 {
-    turnState = (int)input_msg.data; // pitch
+  turnState = (int)input_msg.data[0]; // pitch
 
-    // Serial.println(pitch_yaw[0]);
-    // angle_updated = true; - not used
+  // Serial.println(pitch_yaw[0]);
+  // angle_updated = true; - not used
 }
