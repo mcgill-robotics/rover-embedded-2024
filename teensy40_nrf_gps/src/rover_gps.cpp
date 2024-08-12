@@ -8,7 +8,7 @@
 #include <SoftwareSerial.h>
 
 
-extern float rover_gps_coords[2] = {0,0};
+float rover_gps_coords[2] = {0,0};
 
 static const int RXPin = 4, TXPin = 3;
 static const uint32_t GPSBaud = 9600;
@@ -45,11 +45,13 @@ void gps_loop()
 
     if (millis() > 5000 && gps.charsProcessed() < 10)
     {
-        Serial.println(F("No GPS detected: check wiring."));
+        // Serial.println(F("No GPS detected: check wiring."));
         rover_gps_coords[0] = 0;
         rover_gps_coords[1] = 0; // gps returning 0,0 should be seen as an error code
-        while (true); // program gives up on you
+        //  while (true); // program gives up on you
     }
+
+    // displayInfo();
 }
 
 // Displayed Latitude, Longitude, Date, Time
